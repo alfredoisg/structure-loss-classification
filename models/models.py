@@ -2,6 +2,7 @@ import torch.nn as nn
 
 ## output_size = (input_size - kernel_size + 2*padding)/stride + 1
 
+
 class LeNet5(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -21,11 +22,11 @@ class LeNet5(nn.Module):
             return layer
 
         self.convStack = nn.Sequential(
-            conv_layer(3, 6), ## 244x244 --> (244 - 5 + 2*0)/1 +1 = 240x240
-            nn.MaxPool2d(2, 2), ## 240/2 --> 120x120
-            conv_layer(6, 16), ## 120x120 --> (120 -5 + 2*0)/1 +1 = 116x116
-            nn.MaxPool2d(2, 2), ## 116/2 --> 58x58
-            conv_layer(16, 120) ## 58x58 --> (58 -5 + 2*0)/1 +1 = 54x54
+            conv_layer(3, 6),  ## 244x244 --> (244 - 5 + 2*0)/1 +1 = 240x240
+            nn.MaxPool2d(2, 2),  ## 240/2 --> 120x120
+            conv_layer(6, 16),  ## 120x120 --> (120 -5 + 2*0)/1 +1 = 116x116
+            nn.MaxPool2d(2, 2),  ## 116/2 --> 58x58
+            conv_layer(16, 120),  ## 58x58 --> (58 -5 + 2*0)/1 +1 = 54x54
         )
 
         self.fcStack = nn.Sequential(
