@@ -4,8 +4,9 @@ import torch.nn as nn
 
 
 class LeNet5(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, num_classes: int) -> None:
         super().__init__()
+        self.num_classes = num_classes
 
         def conv_layer(in_channels, out_channels):
             layer = nn.Sequential(
@@ -34,7 +35,10 @@ class LeNet5(nn.Module):
             nn.Linear(54 * 54 * 120, 84),
             nn.Dropout(p=0.5),
             nn.ReLU(),
-            nn.Linear(84, 3),
+            nn.Linear(84, 10),
+            nn.Dropout(p=0.5),
+            nn.ReLU(),
+            nn.Linear(10, num_classes),
         )
 
     def forward(self, x):

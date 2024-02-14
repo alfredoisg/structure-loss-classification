@@ -1,7 +1,12 @@
-
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger
+
+import torch.nn as nn
+import torch
+
+from torchvision.models.feature_extraction import create_feature_extractor
+from torch.utils.data import DataLoader
 
 
 def train_model(
@@ -46,7 +51,7 @@ def train_model(
         mode="min",
     )
 
-    csv_logger = CSVLogger(f"{save_dir}/{model.__class__.__name__}.csv")
+    csv_logger = CSVLogger(f"{save_dir}/{model.__class__.__name__}")
 
     # Determine checkpoint path for loading best model if applicable
     ckpt_path = None
@@ -57,7 +62,7 @@ def train_model(
         accelerator=trainer_config["accelerator"],
         devices=trainer_config["devices"],
         max_epochs=trainer_config["max_epochs"],
-        precision=trainer_config["precission"],
+        precision=trainer_config["precision"],
         log_every_n_steps=trainer_config["n_steps"],
         callbacks=[checkpoint_callback, early_stop_callback],
         logger=csv_logger,
@@ -75,3 +80,24 @@ def train_model(
 
     # Return the validation metrics for aggregation
     return val_metrics
+
+
+
+def get_features(model: nn.Module, layers: list, data_loader: DataLoader, device: str):
+
+    feature_extractor = create_feature_extractor(model, layers)
+
+    features = {layer_name: [] for layer_name in layers}
+    labels = []
+
+    feature_extractor.eval()
+    with torch.no_grad():
+        for image, label in data_loader:
+            image, label = image.to(device), label.to(device)
+            predicted_dict = feature_extractor(image)
+
+            for layer_name in layers:
+                features[layer_name].extend(predicted_dict[layer_name].cpu().numpy())
+            labels.extend(label.cpu().numpy())
+
+    return features, labels
