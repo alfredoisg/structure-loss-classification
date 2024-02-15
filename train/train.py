@@ -72,14 +72,15 @@ def train_model(
 
     trainer.validate(model=model, datamodule=data_module)
 
-    # Collect validation metrics from the most recent epoch
+    # # Collect validation metrics from the most recent epoch
     val_metrics = trainer.callback_metrics
+    val_metrics_cpu = {key: val.cpu().numpy() for key, val in val_metrics.items()}
 
     # Example: Log or print the validation metrics for this fold
-    print(f"Fold {fold} Validation Metrics:", val_metrics)
+    print(f"Fold None Validation Metrics:", val_metrics_cpu)
 
-    # Return the validation metrics for aggregation
-    return val_metrics
+    # Return the CPU-based validation metrics for aggregation
+    return val_metrics_cpu
 
 
 def get_features(model: nn.Module, layers: list, data_loader: DataLoader, device: str):
