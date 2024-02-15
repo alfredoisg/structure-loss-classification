@@ -4,9 +4,11 @@ import torch.nn as nn
 
 
 class LeNet5(nn.Module):
-    def __init__(self, num_classes: int) -> None:
+    def __init__(self, num_classes: int, size_layer_1: int, size_layer_2: int) -> None:
         super().__init__()
         self.num_classes = num_classes
+        self.size_layer_1 = size_layer_1
+        self.size_layer_2 = size_layer_2
 
         def conv_layer(in_channels, out_channels):
             layer = nn.Sequential(
@@ -32,13 +34,13 @@ class LeNet5(nn.Module):
 
         self.fcStack = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(54 * 54 * 120, 84),
+            nn.Linear(54 * 54 * 120, self.size_layer_1),
             nn.Dropout(p=0.5),
             nn.ReLU(),
-            nn.Linear(84, 10),
+            nn.Linear(self.size_layer_1, self.size_layer_2),
             nn.Dropout(p=0.5),
             nn.ReLU(),
-            nn.Linear(10, num_classes),
+            nn.Linear(self.size_layer_2, num_classes),
         )
 
     def forward(self, x):
