@@ -82,7 +82,6 @@ def train_model(
     return val_metrics
 
 
-
 def get_features(model: nn.Module, layers: list, data_loader: DataLoader, device: str):
 
     feature_extractor = create_feature_extractor(model, layers)

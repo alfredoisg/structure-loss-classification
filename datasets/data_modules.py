@@ -17,7 +17,7 @@ class CustomImageDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=True,
-            pin_memory=True
+            pin_memory=True,
         )
 
     def val_dataloader(self):
@@ -26,5 +26,5 @@ class CustomImageDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=False,
-            pin_memory=True
+            pin_memory=True,
         )

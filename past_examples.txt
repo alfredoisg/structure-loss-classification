@@ -1,0 +1,59 @@
+# class_indices = aux_data.class_to_idx
+# # Original names and their order which you know
+# names_dict = {
+#     "typeA": "Diameter\nFluctuations",
+#     "typeB": "Node Cut",
+#     "typeC": "Particle Hit",
+#     "goodIngots": "No Structure\nLoss",
+# }
+
+# # Get class indices from the ImageFolder
+# class_indices = aux_data.class_to_idx
+
+# # Order your names list according to the class indices
+# ordered_names = [
+#     names_dict[class_name]
+#     for class_name, index in sorted(class_indices.items(), key=lambda item: item[1])
+# ]
+
+# # Determine the layer from which to extract features --> we want to extract at the pooling layers
+# layers = ["convStack.1", "convStack.3"]
+# node_names = get_graph_node_names(model)
+# loader = DataLoader(
+#     dataset=aux_data, batch_size=batch_size, shuffle=False, num_workers=8
+# )
+# features, labels = get_features(
+#     model=model, layers=layers, data_loader=loader, device=device
+# )
+# pooling_layers = ["Pooling layer 1", "Pooling layer 2"]
+# display_filters(
+#     features=features,
+#     img_num=156,
+#     layers=layers,
+#     cmap="viridis",
+#     data=aux_data,
+#     name_layers=pooling_layers,
+# )
+
+
+
+for fold, (train_idx, val_idx) in enumerate(kfold.split(aux_data, targets)):
+
+    train_data = torch.utils.data.Subset(aux_data, train_idx)
+    val_data = torch.utils.data.Subset(aux_data, val_idx)
+
+    data_module = CustomImageDataModule(
+        train_dataset=train_data,
+        val_dataset=val_data,
+        batch_size=4,
+        num_workers=12,
+    )
+
+    val_metrics_fold = train_model(
+        model=model2,
+        trainer_config=trainer_config,
+        save_dir="logdir/",
+        data_module=data_module,
+    )
+
+    validation_metrics.append(val_metrics_fold)
