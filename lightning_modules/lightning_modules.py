@@ -47,6 +47,7 @@ class LitModelBase(pl.LightningModule):
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
+                sync_dist=True
             )
 
         return loss
@@ -63,15 +64,29 @@ class LitModelBase(pl.LightningModule):
 
 class LitLeNet5(LitModelBase):
     def __init__(
-        self, num_classes: int, learning_rate: float, pretrained: bool = False
+        self,
+        num_classes: int,
+        size_layer_1: int,
+        size_layer_2: int,
+        learning_rate: float,
+        pretrained: bool = False,
     ) -> None:
-        super().__init__(num_classes, learning_rate, pretrained=pretrained)
+        super().__init__(
+            num_classes,
+            learning_rate,
+            pretrained=pretrained,
+        )
 
-        # Initialize your model architecture
-        self.model = LeNet5(num_classes=num_classes)
+        self.size_layer_1 = size_layer_1
+        self.size_layer_2 = size_layer_2
+
+        self.model = LeNet5(
+            num_classes=num_classes,
+            size_layer_1=size_layer_1,
+            size_layer_2=size_layer_2,
+        )
 
         if self.pretrained:
-            # Assuming you have a method to load custom pre-trained weights
             self.model.load_state_dict(
                 torch.load("path_to_custom_pretrained_weights.pth")
             )
