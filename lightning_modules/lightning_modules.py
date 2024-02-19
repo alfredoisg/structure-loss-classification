@@ -66,9 +66,9 @@ class LitLeNet5(LitModelBase):
     def __init__(
         self,
         num_classes: int,
-        size_layer_1: int,
-        size_layer_2: int,
         learning_rate: float,
+        size_layer_1: int = 84,
+        size_layer_2: int = 10,
         pretrained: bool = False,
     ) -> None:
         super().__init__(
