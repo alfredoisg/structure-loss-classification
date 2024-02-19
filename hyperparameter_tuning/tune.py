@@ -90,14 +90,13 @@ class HyperParameterTuner:
             
         
     def train_func(self, config):
-        
-        # TO DO: update lightning_module so that it has a default_config
-        
-        dm = self.datamodule(config)
-        
-        model = self.model(config)
 
-        num_steps_per_epoch = max(1, (len(dm.train_data) + len(dm.val_data)) // config["batch_size"])
+        
+        dm = self.datamodule
+        
+        model = self.model
+
+        num_steps_per_epoch = max(1, (len(dm.train_dataset) + len(dm.val_dataset)) // config["batch_size"])
 
         trainer = pl.Trainer(
             devices="auto",
@@ -109,6 +108,7 @@ class HyperParameterTuner:
             max_epochs=self.num_epochs,
             log_every_n_steps=num_steps_per_epoch
         )
+        
         trainer = prepare_trainer(trainer)
         trainer.fit(model, datamodule=dm)
     
