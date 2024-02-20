@@ -8,6 +8,7 @@ import torch
 from torchvision.models.feature_extraction import create_feature_extractor
 from torch.utils.data import DataLoader
 
+from sklearn.model_selection import StratifiedKFold
 
 def train_model(
     model: pl.LightningModule,
@@ -71,16 +72,70 @@ def train_model(
     trainer.fit(model=model, datamodule=data_module)
 
     trainer.validate(model=model, datamodule=data_module)
+ 
+ 
+    cm = model.stored_confusion_matrix
+    print("Validation Confusion Matrix:", cm)
+    
 
-    # # Collect validation metrics from the most recent epoch
+    # Collect validation metrics and include the confusion matrix
     val_metrics = trainer.callback_metrics
-    val_metrics_cpu = {key: val.cpu().numpy() for key, val in val_metrics.items()}
+    val_metrics_cpu = {key: val.cpu().item() for key, val in val_metrics.items()}
 
-    # Example: Log or print the validation metrics for this fold
-    print(f"Fold None Validation Metrics:", val_metrics_cpu)
 
-    # Return the CPU-based validation metrics for aggregation
-    return val_metrics_cpu
+
+    return val_metrics_cpu, cm 
+
+def train_with_cv(
+    model_class: pl.LightningModule,
+    model_params: dict,
+    trainer_config: dict,
+    data_module_class: pl.LightningDataModule,
+    data_module_params: dict,
+    n_splits: int = 5,
+    shuffle: bool = True,
+    random_state: int = 42,
+    save_dir_base: str = "logdir-struct/",
+) -> dict:
+    """
+    Trains a model using k-fold cross-validation.
+    """
+    
+    # Initialize KFold or StratifiedKFold
+    kfold = StratifiedKFold(n_splits=n_splits, shuffle=shuffle, random_state=random_state)
+    
+    # Storage for all validation metrics for aggregation later
+    all_metrics = []
+
+    for fold, (train_idx, val_idx) in enumerate(kfold.split(data_module_params["data"])):
+        print(f"Starting Fold {fold+1}/{n_splits}")
+        
+        # Update data_module_params with current fold's indices
+        data_module_params.update({'train_idx': train_idx, 'val_idx': val_idx})
+        
+        # Instantiate the model and data module for the current fold
+        model = model_class(**model_params)
+        data_module = data_module_class(**data_module_params)
+        
+        # Set save directory for the current fold
+        save_dir = f"{save_dir_base}/fold_{fold+1}"
+        
+        # Train the model using the existing train_model function
+        val_metrics = train_model(
+            model=model,
+            trainer_config=trainer_config,
+            save_dir=save_dir,
+            data_module=data_module,
+            use_best_model=True,  # Assuming you want to use the best model; adjust as needed
+            fold=fold
+        )
+
+        all_metrics.append(val_metrics)
+        
+    # Calculate and return summary metrics (mean, std) for all folds
+    metrics_summary = calculate_metrics_summary(all_metrics)
+    return metrics_summary
+
 
 
 def get_features(model: nn.Module, layers: list, data_loader: DataLoader, device: str):

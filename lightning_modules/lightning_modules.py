@@ -15,12 +15,18 @@ class LitModelBase(pl.LightningModule):
     ) -> None:
         super().__init__()
 
-        self.num_classes = (num_classes,)
+        self.num_classes = num_classes
+
 
         self.accuracy = torchmetrics.Accuracy(
             task="multiclass", num_classes=num_classes
         )
         self.f1_score = torchmetrics.F1Score(task="multiclass", num_classes=num_classes)
+
+        self.cm = torchmetrics.ConfusionMatrix(task="multiclass",
+                                               num_classes=num_classes)
+
+        self.stored_confusion_matrix = None
 
         self.loss_fn = nn.CrossEntropyLoss()
         self.learning_rate = learning_rate
@@ -37,6 +43,8 @@ class LitModelBase(pl.LightningModule):
         accuracy = self.accuracy(predictions, labels)
         f1_score = self.f1_score(predictions, labels)
 
+        self.cm(predictions, labels)
+
         if stage:
             self.log_dict(
                 {
@@ -49,7 +57,6 @@ class LitModelBase(pl.LightningModule):
                 prog_bar=True,
                 sync_dist=True
             )
-
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -57,6 +64,17 @@ class LitModelBase(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, stage="val")
+
+
+    def on_validation_epoch_end(self):
+       
+        cm = self.cm.compute()  
+        self.stored_confusion_matrix = cm.cpu().numpy()
+        print("Validation Confusion Matrix:", cm)
+        
+        self.cm.reset()
+
+
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
