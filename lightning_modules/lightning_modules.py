@@ -69,7 +69,6 @@ class LitModelBase(pl.LightningModule):
 
         cm = self.cm.compute()
         self.stored_confusion_matrix = cm.cpu().numpy()
-        print("Validation Confusion Matrix:", cm)
 
         self.cm.reset()
 

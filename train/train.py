@@ -12,7 +12,7 @@ from sklearn.model_selection import StratifiedKFold
 
 from datasets.datasets import CustomDatasetWrapper
 from datasets.data_modules import CustomImageDataModule
-
+from lightning_modules.lightning_modules import LitModelBase
 
 def train_model(
     model: pl.LightningModule,
@@ -85,7 +85,6 @@ def train_model(
     trainer.validate(model=model, datamodule=data_module)
 
     cm = model.stored_confusion_matrix
-    print("Validation Confusion Matrix:", cm)
 
     # Collect validation metrics and include the confusion matrix
     val_metrics = trainer.callback_metrics
@@ -95,7 +94,7 @@ def train_model(
 
 
 def train_with_cv(
-    model: pl.LightningModule,
+    model_class: LitModelBase,
     model_params: dict,
     trainer_config: dict,
     data: CustomDatasetWrapper,
@@ -113,7 +112,7 @@ def train_with_cv(
     """
 
     if save_dir_base == None:
-        save_dir_base = f"logdir/{model.__name__}/{classification_mode}/cv/"
+        save_dir_base = f"logdir/{model_class.__name__}/{classification_mode}/cv/"
 
     # Initialize KFold or StratifiedKFold
     kfold = StratifiedKFold(
@@ -126,7 +125,7 @@ def train_with_cv(
     for fold, (train_idx, val_idx) in enumerate(kfold.split(data, targets)):
         print(f"Starting Fold {fold+1}/{n_splits}")
 
-        model = model(**model_params)
+        fold_model = model_class(**model_params)
 
         # Update data_module_params with current fold's indices
         train_data = torch.utils.data.Subset(data, train_idx)
@@ -144,7 +143,7 @@ def train_with_cv(
 
         # Train the model using the existing train_model function
         val_metrics = train_model(
-            model=model,
+            model=fold_model,
             trainer_config=trainer_config,
             save_dir=save_dir,
             data_module=data_module,
