@@ -17,14 +17,14 @@ class LitModelBase(pl.LightningModule):
 
         self.num_classes = num_classes
 
-
         self.accuracy = torchmetrics.Accuracy(
             task="multiclass", num_classes=num_classes
         )
         self.f1_score = torchmetrics.F1Score(task="multiclass", num_classes=num_classes)
 
-        self.cm = torchmetrics.ConfusionMatrix(task="multiclass",
-                                               num_classes=num_classes)
+        self.cm = torchmetrics.ConfusionMatrix(
+            task="multiclass", num_classes=num_classes
+        )
 
         self.stored_confusion_matrix = None
 
@@ -55,7 +55,7 @@ class LitModelBase(pl.LightningModule):
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
-                sync_dist=True
+                sync_dist=True,
             )
         return loss
 
@@ -65,16 +65,13 @@ class LitModelBase(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, stage="val")
 
-
     def on_validation_epoch_end(self):
-       
-        cm = self.cm.compute()  
+
+        cm = self.cm.compute()
         self.stored_confusion_matrix = cm.cpu().numpy()
         print("Validation Confusion Matrix:", cm)
-        
+
         self.cm.reset()
-
-
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)

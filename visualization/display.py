@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import pandas as pd
 
 
 def process_plot_image(data, x: int, plot: bool = False):
@@ -27,3 +29,78 @@ def process_plot_image(data, x: int, plot: bool = False):
         plt.imshow(image_data)
     else:
         return image_data
+
+
+def display_metrics(
+    version: int,
+    model,
+    classification_mode: str,
+    parent_dir: str = None,
+    plot=False,
+    test: bool = False,
+):
+
+    dfs = []
+
+    if parent_dir is None and test:
+        parent_dir = f"logdir/{model.__class__.__name__}/{classification_mode}/cv/"
+
+    else:
+        parent_dir = f"logdir/{model.__class__.__name__}/cv"
+
+    for fold in range(len(os.listdir(parent_dir))):
+
+        print(f"{parent_dir}/fold_{fold}")
+        df = pd.read_csv(
+            f"{parent_dir}/fold_{fold+1}/LitLeNet5/lightning_logs/version_{version}/metrics.csv"
+        )
+
+        dfs.append(df)
+
+    all_folds = pd.concat(dfs, ignore_index=True)
+    grouped = (
+        all_folds.groupby("epoch")
+        .agg({"val_accuracy": ["mean", "std"], "val_loss": ["mean", "std"]})
+        .reset_index()
+    )
+
+    grouped.columns = [
+        "epoch",
+        "mean_val_accuracy",
+        "std_val_accuracy",
+        "mean_val_loss",
+        "std_val_loss",
+    ]
+
+    if plot:
+
+        plt.plot(grouped.epoch, grouped.mean_val_loss, label="validation loss")
+        plt.fill_between(
+            grouped.epoch,
+            grouped.mean_val_loss + grouped.std_val_loss,
+            grouped.mean_val_loss - grouped.std_val_loss,
+            color="tab:blue",
+            alpha=0.4,
+        )
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy")
+        plt.title("Mean Accuracy per Epoch with Standard Deviation")
+        plt.legend()
+        plt.grid(True)
+        plt.plot(grouped.epoch, grouped.mean_val_accuracy, label="validation accuracy")
+        plt.fill_between(
+            grouped.epoch,
+            grouped.mean_val_accuracy + grouped.std_val_accuracy,
+            grouped.mean_val_accuracy - grouped.std_val_accuracy,
+            color="tab:green",
+            alpha=0.4,
+            label="Std Deviation",
+        )
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy")
+        plt.title("Mean Accuracy per Epoch with Standard Deviation")
+        plt.legend(loc=(0.4, 0.55))
+        plt.grid(True)
+        plt.show()
+
+    return grouped

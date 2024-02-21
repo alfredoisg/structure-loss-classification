@@ -7,7 +7,11 @@ from torchvision.datasets.folder import has_file_allowed_extension
 
 class CustomDatasetWrapper(Dataset):
     def __init__(self, root_dir, classification_mode, transform=None):
-        assert classification_mode in ["binary", "all", "only_bad"], "Unsupported classification mode"
+        assert classification_mode in [
+            "binary",
+            "all",
+            "only_bad",
+        ], "Unsupported classification mode"
         self.dataset = ImageFolder(root=root_dir, transform=transform)
         self.classification_mode = classification_mode
         self.label_map, self.valid_indices = self._create_label_map()
@@ -29,10 +33,18 @@ class CustomDatasetWrapper(Dataset):
         elif self.classification_mode == "only_bad":
             # Exclude 'goodIngots' samples and adjust indices for 'bad' types
             for idx, class_name in enumerate(self.dataset.classes):
-                if 'good' not in class_name:  # Flexible condition to exclude 'goodIngots'
+                if (
+                    "good" not in class_name
+                ):  # Flexible condition to exclude 'goodIngots'
                     new_index = len(label_map)  # Assign a new consecutive index
                     label_map[idx] = new_index
-                    valid_indices.extend([i for i, (_, label) in enumerate(self.dataset.samples) if label == idx])
+                    valid_indices.extend(
+                        [
+                            i
+                            for i, (_, label) in enumerate(self.dataset.samples)
+                            if label == idx
+                        ]
+                    )
 
         return label_map, valid_indices
 
@@ -44,5 +56,7 @@ class CustomDatasetWrapper(Dataset):
         actual_idx = self.valid_indices[idx]
         image, label = self.dataset[actual_idx]
         # Adjust the label based on the classification mode
-        adjusted_label = self.label_map.get(label, -1)  # Default to -1 for any unexpected label
+        adjusted_label = self.label_map.get(
+            label, -1
+        )  # Default to -1 for any unexpected label
         return image, adjusted_label

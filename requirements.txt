@@ -3,6 +3,7 @@ numpy
 pandas
 pytorch_lightning
 ray[default]
+ray[tune]
 scienceplots
 scikit_learn
 scipy

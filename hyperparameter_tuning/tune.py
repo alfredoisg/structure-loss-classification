@@ -23,7 +23,6 @@ from lightning_modules.lightning_modules import LitModelBase
 
 
 class HyperParameterTuner:
-    
     """
     A class for hyperparameter tuning using PyTorch Lightning models and Ray Tune.
 
@@ -53,7 +52,7 @@ class HyperParameterTuner:
                              size_layer_1=default_config['layer_1_size'],
                              size_layer_2=default_config['layer_2_size'],
                              learning_rate=default_config['lr'])
-                             
+
     datamodule = MyDataModule()
     search_space = {
         "lr": tune.loguniform(1e-4, 1e-1),
@@ -64,39 +63,46 @@ class HyperParameterTuner:
     print("Best hyperparameters found were: ", best_config)
     ```
     """
-    
-    
-    def __init__(self, model: LitModelBase, datamodule: CustomImageDataModule,
-                 search_space: dict, resources: dict = {'num_cpus': os.cpu_count(),
-                                                        'num_gpus': torch.cuda.device_count()},
-                 num_samples: int = 3, num_epochs: int = 2) -> None:
-        
+
+    def __init__(
+        self,
+        model: LitModelBase,
+        datamodule: CustomImageDataModule,
+        search_space: dict,
+        resources: dict = {
+            "num_cpus": os.cpu_count(),
+            "num_gpus": torch.cuda.device_count(),
+        },
+        num_samples: int = 3,
+        num_epochs: int = 2,
+    ) -> None:
+
         self.model = model
         self.datamodule = datamodule
         self.search_space = search_space
         self.resources = resources
         self.num_samples = num_samples
         self.num_epochs = num_epochs
-        
+
     def auto_init_ray(self):
-    
+
         resources = self.resources
-        
+
         try:
             ray.init(**resources)
         except RuntimeError:
             ray.shutdown()
             ray.init(**resources)
-            
-        
+
     def train_func(self, config):
 
-        
         dm = self.datamodule
-        
+
         model = self.model
 
-        num_steps_per_epoch = max(1, (len(dm.train_dataset) + len(dm.val_dataset)) // config["batch_size"])
+        num_steps_per_epoch = max(
+            1, (len(dm.train_dataset) + len(dm.val_dataset)) // config["batch_size"]
+        )
 
         trainer = pl.Trainer(
             devices="auto",
@@ -106,25 +112,22 @@ class HyperParameterTuner:
             plugins=[RayLightningEnvironment()],
             enable_progress_bar=False,
             max_epochs=self.num_epochs,
-            log_every_n_steps=num_steps_per_epoch
+            log_every_n_steps=num_steps_per_epoch,
         )
-        
+
         trainer = prepare_trainer(trainer)
         trainer.fit(model, datamodule=dm)
-    
-    
 
-    
     def hypertune(self):
-        
+
         self.auto_init_ray()
-    
-        use_gpu = True if self.resources['num_gpus'] > 0 else False
-    
+
+        use_gpu = True if self.resources["num_gpus"] > 0 else False
+
         scaling_config = ScalingConfig(
-        num_workers=1,
-        use_gpu=use_gpu,
-        trainer_resources={"CPU":self.resources['num_cpus']}
+            num_workers=1,
+            use_gpu=use_gpu,
+            trainer_resources={"CPU": self.resources["num_cpus"]},
         )
 
         run_config = RunConfig(
@@ -134,14 +137,16 @@ class HyperParameterTuner:
                 checkpoint_score_order="max",
             ),
         )
-        
+
         ray_trainer = TorchTrainer(
-        self.train_func,
-        scaling_config=scaling_config,
-        run_config=run_config,
+            self.train_func,
+            scaling_config=scaling_config,
+            run_config=run_config,
         )
-        
-        scheduler = ASHAScheduler(max_t=self.num_epochs, grace_period=1, reduction_factor=2)
+
+        scheduler = ASHAScheduler(
+            max_t=self.num_epochs, grace_period=1, reduction_factor=2
+        )
 
         tuner = tune.Tuner(
             ray_trainer,
@@ -153,9 +158,9 @@ class HyperParameterTuner:
                 scheduler=scheduler,
             ),
         )
-        
+
         results = tuner.fit()
-        best_config = results.get_best_result(metric='val_accuracy', mode='max').config
-        print(' Best hyperparameter configuration found: ', best_config)
-        
+        best_config = results.get_best_result(metric="val_accuracy", mode="max").config
+        print(" Best hyperparameter configuration found: ", best_config)
+
         return best_config
