@@ -49,18 +49,19 @@ def train_model(
         monitor="val_loss", patience=trainer_config["patience"], min_delta=0.00
     )
 
-    checkpoint_callback = ModelCheckpoint(
+    
+
+    if test:
+        callbacks = [early_stop_callback]
+
+    else:
+        checkpoint_callback = ModelCheckpoint(
         dirpath=save_dir,
         filename="{epoch}-{val_loss:.2f}",
         monitor="val_loss",
         save_top_k=1,
         mode="min",
     )
-
-    if test:
-        callbacks = [early_stop_callback]
-
-    else:
         callbacks = [checkpoint_callback, early_stop_callback]
 
     csv_logger = CSVLogger(f"{save_dir}")
@@ -78,6 +79,7 @@ def train_model(
         log_every_n_steps=trainer_config["n_steps"],
         callbacks=callbacks,
         logger=csv_logger,
+        enable_checkpointing=False
     )
 
     trainer.fit(model=model, datamodule=data_module)

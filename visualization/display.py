@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 
+from lightning_modules.lightning_modules import LitModelBase
 
 def process_plot_image(data, x: int, plot: bool = False):
     image_data = np.transpose(data[x][0])
@@ -33,26 +34,24 @@ def process_plot_image(data, x: int, plot: bool = False):
 
 def display_metrics(
     version: int,
-    model,
+    model_class: LitModelBase,
     classification_mode: str,
     parent_dir: str = None,
     plot=False,
-    test: bool = False,
 ):
 
     dfs = []
 
-    if parent_dir is None and test:
-        parent_dir = f"logdir/{model.__class__.__name__}/{classification_mode}/cv/"
+    if parent_dir is None:
+        parent_dir = f"logdir/{model_class.__name__}/{classification_mode}/cv"
 
-    else:
-        parent_dir = f"logdir/{model.__class__.__name__}/cv"
+
 
     for fold in range(len(os.listdir(parent_dir))):
 
         print(f"{parent_dir}/fold_{fold}")
         df = pd.read_csv(
-            f"{parent_dir}/fold_{fold+1}/LitLeNet5/lightning_logs/version_{version}/metrics.csv"
+            f"{parent_dir}/fold_{fold+1}/lightning_logs/version_{version}/metrics.csv"
         )
 
         dfs.append(df)
