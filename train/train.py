@@ -45,16 +45,17 @@ def train_model(
     }
     """
 
-    early_stop_callback = EarlyStopping(
-        monitor="val_loss", patience=trainer_config["patience"], min_delta=0.00
-    )
 
     
 
     if test:
-        callbacks = [early_stop_callback]
+        callbacks = []
 
     else:
+        early_stop_callback = EarlyStopping(
+        monitor="val_loss", patience=trainer_config["patience"], min_delta=0.05
+    )
+        
         checkpoint_callback = ModelCheckpoint(
         dirpath=save_dir,
         filename="{epoch}-{val_loss:.2f}",
@@ -92,7 +93,7 @@ def train_model(
     val_metrics = trainer.callback_metrics
     val_metrics_cpu = {key: val.cpu().item() for key, val in val_metrics.items()}
 
-    return val_metrics_cpu, cm
+    return model, val_metrics_cpu, cm
 
 
 def train_with_cv(
@@ -114,7 +115,7 @@ def train_with_cv(
     """
 
     if save_dir_base == None:
-        save_dir_base = f"logdir/{model_class.__name__}/{classification_mode}/cv/"
+        save_dir_base = f"logdir/{model_class.__name__}/{classification_mode}/cv"
 
     # Initialize KFold or StratifiedKFold
     kfold = StratifiedKFold(
@@ -144,7 +145,7 @@ def train_with_cv(
         save_dir = f"{save_dir_base}/fold_{fold+1}"
 
         # Train the model using the existing train_model function
-        val_metrics = train_model(
+        trained_model, val_metrics, cm = train_model(
             model=fold_model,
             trainer_config=trainer_config,
             save_dir=save_dir,
@@ -152,8 +153,10 @@ def train_with_cv(
             fold=fold,
         )
 
-        all_metrics[f"Fold {fold+1}"] = val_metrics
-
+        # Organize the fold's results, including the model
+        fold_results = (trained_model, val_metrics, cm)
+        all_metrics[f"Fold {fold+1}"] = fold_results
+        
     return all_metrics
 
 
@@ -175,3 +178,7 @@ def get_features(model: nn.Module, layers: list, data_loader: DataLoader, device
             labels.extend(label.cpu().numpy())
 
     return features, labels
+
+
+def train_svc():
+    pass

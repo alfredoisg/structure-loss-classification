@@ -33,9 +33,9 @@ def process_plot_image(data, x: int, plot: bool = False):
 
 
 def display_metrics(
-    version: int,
     model_class: LitModelBase,
     classification_mode: str,
+    version: int,
     parent_dir: str = None,
     plot=False,
 ):
@@ -45,11 +45,12 @@ def display_metrics(
     if parent_dir is None:
         parent_dir = f"logdir/{model_class.__name__}/{classification_mode}/cv"
 
-
+    
 
     for fold in range(len(os.listdir(parent_dir))):
 
-        print(f"{parent_dir}/fold_{fold}")
+        print(f"{parent_dir}/fold_{fold+1}")
+        
         df = pd.read_csv(
             f"{parent_dir}/fold_{fold+1}/lightning_logs/version_{version}/metrics.csv"
         )
@@ -81,11 +82,7 @@ def display_metrics(
             color="tab:blue",
             alpha=0.4,
         )
-        plt.xlabel("Epoch")
-        plt.ylabel("Accuracy")
-        plt.title("Mean Accuracy per Epoch with Standard Deviation")
-        plt.legend()
-        plt.grid(True)
+        
         plt.plot(grouped.epoch, grouped.mean_val_accuracy, label="validation accuracy")
         plt.fill_between(
             grouped.epoch,
@@ -93,13 +90,14 @@ def display_metrics(
             grouped.mean_val_accuracy - grouped.std_val_accuracy,
             color="tab:green",
             alpha=0.4,
-            label="Std Deviation",
+        
         )
-        plt.xlabel("Epoch")
-        plt.ylabel("Accuracy")
-        plt.title("Mean Accuracy per Epoch with Standard Deviation")
-        plt.legend(loc=(0.4, 0.55))
-        plt.grid(True)
-        plt.show()
+        
 
+        plt.xlabel("Epoch")
+      
+        plt.title("Mean Accuracy and Validation loss with Standard Deviation")
+        plt.legend()
+        plt.grid(True)
+        
     return grouped
