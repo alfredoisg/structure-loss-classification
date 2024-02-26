@@ -14,6 +14,7 @@ from datasets.datasets import CustomDatasetWrapper
 from datasets.data_modules import CustomImageDataModule
 from lightning_modules.lightning_modules import LitModelBase
 
+
 def train_model(
     model: pl.LightningModule,
     trainer_config: dict,
@@ -45,24 +46,21 @@ def train_model(
     }
     """
 
-
-    
-
     if test:
         callbacks = []
 
     else:
         early_stop_callback = EarlyStopping(
-        monitor="val_loss", patience=trainer_config["patience"], min_delta=0.05
-    )
-        
+            monitor="val_loss", patience=trainer_config["patience"], min_delta=0.05
+        )
+
         checkpoint_callback = ModelCheckpoint(
-        dirpath=save_dir,
-        filename="{epoch}-{val_loss:.2f}",
-        monitor="val_loss",
-        save_top_k=1,
-        mode="min",
-    )
+            dirpath=save_dir,
+            filename="{epoch}-{val_loss:.2f}",
+            monitor="val_loss",
+            save_top_k=1,
+            mode="min",
+        )
         callbacks = [checkpoint_callback, early_stop_callback]
 
     csv_logger = CSVLogger(f"{save_dir}")
@@ -80,7 +78,7 @@ def train_model(
         log_every_n_steps=trainer_config["n_steps"],
         callbacks=callbacks,
         logger=csv_logger,
-        enable_checkpointing=False
+        enable_checkpointing=False,
     )
 
     trainer.fit(model=model, datamodule=data_module)
@@ -156,7 +154,7 @@ def train_with_cv(
         # Organize the fold's results, including the model
         fold_results = (trained_model, val_metrics, cm)
         all_metrics[f"Fold {fold+1}"] = fold_results
-        
+
     return all_metrics
 
 

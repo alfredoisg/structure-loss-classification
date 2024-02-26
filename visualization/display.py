@@ -5,6 +5,7 @@ import pandas as pd
 
 from lightning_modules.lightning_modules import LitModelBase
 
+
 def process_plot_image(data, x: int, plot: bool = False):
     image_data = np.transpose(data[x][0])
     image_data = np.rot90(image_data, k=-1)  # Rotate 90 degrees counter-clockwise
@@ -32,72 +33,103 @@ def process_plot_image(data, x: int, plot: bool = False):
         return image_data
 
 
+# def display_metrics(
+#     model_class: LitModelBase,
+#     classification_mode: str,
+#     version: int,
+#     parent_dir: str = None,
+#     plot=False,
+# ):
+
+#     dfs = []
+
+#     if parent_dir is None:
+#         parent_dir = f"logdir/{model_class.__name__}/{classification_mode}/cv"
+
+#     for fold in range(len(os.listdir(parent_dir))):
+
+#         print(f"{parent_dir}/fold_{fold+1}")
+
+#         df = pd.read_csv(
+#             f"{parent_dir}/fold_{fold+1}/lightning_logs/version_{version}/metrics.csv"
+#         )
+
+#         dfs.append(df)
+
+#     all_folds = pd.concat(dfs, ignore_index=True)
+#     grouped = (
+#         all_folds.groupby("epoch")
+#         .agg({"val_accuracy": ["mean", "std"], "val_loss": ["mean", "std"]})
+#         .reset_index()
+#     )
+
+#     grouped.columns = [
+#         "epoch",
+#         "mean_val_accuracy",
+#         "std_val_accuracy",
+#         "mean_val_loss",
+#         "std_val_loss",
+#     ]
+
+#     if plot:
+
+#         plt.plot(grouped.epoch, grouped.mean_val_loss, label="validation loss")
+#         plt.fill_between(
+#             grouped.epoch,
+#             grouped.mean_val_loss + grouped.std_val_loss,
+#             grouped.mean_val_loss - grouped.std_val_loss,
+#             color="tab:blue",
+#             alpha=0.4,
+#         )
+
+#         plt.plot(grouped.epoch, grouped.mean_val_accuracy, label="validation accuracy")
+#         plt.fill_between(
+#             grouped.epoch,
+#             grouped.mean_val_accuracy + grouped.std_val_accuracy,
+#             grouped.mean_val_accuracy - grouped.std_val_accuracy,
+#             color="tab:green",
+#             alpha=0.4,
+#         )
+
+#         plt.xlabel("Epoch")
+
+#         plt.title("Mean Accuracy and Validation loss with Standard Deviation")
+#         plt.legend()
+#         plt.grid(True)
+
+#     return grouped
+
 def display_metrics(
-    model_class: LitModelBase,
-    classification_mode: str,
-    version: int,
-    parent_dir: str = None,
-    plot=False,
+    csv_file: str,
+    save: bool = False,
+    save_dir: str = None
 ):
 
-    dfs = []
+    df = pd.read_csv(csv_file)
 
-    if parent_dir is None:
-        parent_dir = f"logdir/{model_class.__name__}/{classification_mode}/cv"
-
-    
-
-    for fold in range(len(os.listdir(parent_dir))):
-
-        print(f"{parent_dir}/fold_{fold+1}")
-        
-        df = pd.read_csv(
-            f"{parent_dir}/fold_{fold+1}/lightning_logs/version_{version}/metrics.csv"
-        )
-
-        dfs.append(df)
-
-    all_folds = pd.concat(dfs, ignore_index=True)
-    grouped = (
-        all_folds.groupby("epoch")
-        .agg({"val_accuracy": ["mean", "std"], "val_loss": ["mean", "std"]})
-        .reset_index()
+    plt.plot(df.epoch, df.mean_val_loss, label="validation loss")
+    plt.fill_between(
+        df.epoch,
+        df.mean_val_loss + df.std_val_loss,
+        df.mean_val_loss - df.std_val_loss,
+        color="tab:blue",
+        alpha=0.4,
     )
 
-    grouped.columns = [
-        "epoch",
-        "mean_val_accuracy",
-        "std_val_accuracy",
-        "mean_val_loss",
-        "std_val_loss",
-    ]
+    plt.plot(df.epoch, df.mean_val_accuracy, label="validation accuracy")
+    plt.fill_between(
+        df.epoch,
+        df.mean_val_accuracy + df.std_val_accuracy,
+        df.mean_val_accuracy - df.std_val_accuracy,
+        color="tab:green",
+        alpha=0.4,
+    )
 
-    if plot:
+    plt.xlabel("Epoch")
 
-        plt.plot(grouped.epoch, grouped.mean_val_loss, label="validation loss")
-        plt.fill_between(
-            grouped.epoch,
-            grouped.mean_val_loss + grouped.std_val_loss,
-            grouped.mean_val_loss - grouped.std_val_loss,
-            color="tab:blue",
-            alpha=0.4,
-        )
-        
-        plt.plot(grouped.epoch, grouped.mean_val_accuracy, label="validation accuracy")
-        plt.fill_between(
-            grouped.epoch,
-            grouped.mean_val_accuracy + grouped.std_val_accuracy,
-            grouped.mean_val_accuracy - grouped.std_val_accuracy,
-            color="tab:green",
-            alpha=0.4,
-        
-        )
-        
+    plt.title("Mean Accuracy and Validation loss with Standard Deviation")
+    plt.legend()
+    plt.grid(True)
 
-        plt.xlabel("Epoch")
-      
-        plt.title("Mean Accuracy and Validation loss with Standard Deviation")
-        plt.legend()
-        plt.grid(True)
-        
-    return grouped
+    if save:
+        plt.savefig()

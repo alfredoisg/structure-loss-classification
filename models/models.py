@@ -1,4 +1,5 @@
 import torch.nn as nn
+from torchvision import models
 
 ## output_size = (input_size - kernel_size + 2*padding)/stride + 1
 
@@ -47,3 +48,26 @@ class LeNet5(nn.Module):
         x = self.convStack(x)
         x = self.fcStack(x)
         return x
+
+
+class VGG16(nn.Module):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def forward(self, x):
+        pass
+
+
+class ResNet18(nn.Module):
+    def __init__(self, num_classes) -> None:
+        super(ResNet18, self).__init__()
+        self.num_classes = num_classes
+        self.resnet18 = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+
+        self.resnet18.fc = nn.Linear(
+            in_features=self.resnet18.fc.in_features, out_features=self.num_classes
+        )
+
+    def forward(self, x):
+        out = self.resnet18(x)
+        return out

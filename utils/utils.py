@@ -1,7 +1,10 @@
 import pickle
 import json
 
+import os
 from datasets.datasets import CustomDatasetWrapper
+from lightning_modules.lightning_modules import LitModelBase
+import pandas as pd
 
 def load_targets(data: CustomDatasetWrapper, from_dir: str = None):
     if from_dir is None:
@@ -16,6 +19,7 @@ def load_targets(data: CustomDatasetWrapper, from_dir: str = None):
         with open(from_dir, "wb") as f:
             pickle.dump(targets, f)
 
+    return targets
 
 def load_hyperparameter(classification_mode, filename: str = None):
     
@@ -25,3 +29,43 @@ def load_hyperparameter(classification_mode, filename: str = None):
     with open(filename, 'r') as f:
         test_config = json.load(f)
     return test_config
+
+def get_stat_metrics(
+        parent_dir: str,
+        version: int,
+) -> pd.DataFrame:
+
+    dfs = []
+
+    dir_name = parent_dir[parent_dir.index('/')+1:]
+    parent_dir = parent_dir+ '/cv'
+    
+    for fold in range(len(os.listdir(parent_dir))):
+
+        print(f"{parent_dir}/fold_{fold+1}")
+
+        df = pd.read_csv(
+            f"{parent_dir}/fold_{fold+1}/lightning_logs/version_{version}/metrics.csv"
+        )
+
+        dfs.append(df)
+
+    all_folds = pd.concat(dfs, ignore_index=True)
+    grouped = (
+        all_folds.groupby("epoch")
+        .agg({"val_accuracy": ["mean", "std"], "val_loss": ["mean", "std"]})
+        .reset_index()
+    )
+
+    grouped.columns = [
+        "epoch",
+        "mean_val_accuracy",
+        "std_val_accuracy",
+        "mean_val_loss",
+        "std_val_loss",
+    ]
+
+
+    grouped.to_csv(f'results/{dir_name}.csv')
+
+    return grouped
