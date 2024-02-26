@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torchmetrics
 
-from models.models import LeNet5
+from models.models import LeNet5, VGG16, ResNet18
 
 import numpy as np
 
@@ -104,6 +104,26 @@ class LitLeNet5(LitModelBase):
             self.model.load_state_dict(
                 torch.load("path_to_custom_pretrained_weights.pth")
             )
+
+    def forward(self, x):
+        return self.model(x)
+
+
+class LitResNet18(LitModelBase):
+    def __init__(
+        self, num_classes: int, learning_rate: float, pretrained: bool = False
+    ) -> None:
+        super().__init__(num_classes, learning_rate, pretrained)
+     
+        self.model = ResNet18(num_classes=num_classes)
+
+
+        if pretrained:
+            for param in self.model.resnet18.parameters():
+                param.requires_grad = False
+            for param in self.model.resnet18.fc.parameters():
+                param.requires_grad = True
+
 
     def forward(self, x):
         return self.model(x)
