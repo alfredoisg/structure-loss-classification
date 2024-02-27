@@ -32,72 +32,30 @@ def process_plot_image(data, x: int, plot: bool = False):
     else:
         return image_data
 
+def compare_resnet18(classification_mode: str, save: bool = False):
+    df = pd.read_csv(f'/mnt/g/My Drive/structure-loss-classification/results/LitResNet18-not-pretrained/{classification_mode}.csv')
+    df_pre = pd.read_csv(f'/mnt/g/My Drive/structure-loss-classification/results/LitResNet18/{classification_mode}.csv')
 
-# def display_metrics(
-#     model_class: LitModelBase,
-#     classification_mode: str,
-#     version: int,
-#     parent_dir: str = None,
-#     plot=False,
-# ):
+    plt.figure(figsize=(10,8))
 
-#     dfs = []
+    plt.plot(df.epoch, df.mean_val_loss, label='validation loss - not pretrained')
+    plt.plot(df.epoch, df.mean_val_accuracy, label='validation accuracy - not pretrained')
 
-#     if parent_dir is None:
-#         parent_dir = f"logdir/{model_class.__name__}/{classification_mode}/cv"
+    plt.fill_between(df.epoch, df.mean_val_loss+df.std_val_loss, df.mean_val_loss-df.std_val_loss, alpha=0.2)
+    plt.fill_between(df.epoch, df.mean_val_accuracy+df.std_val_accuracy, df.mean_val_accuracy-df.std_val_accuracy, alpha=0.2)
+    plt.ylim(0,1.4)
+    plt.xlim(12,52)
 
-#     for fold in range(len(os.listdir(parent_dir))):
+    plt.plot(df_pre.epoch, df_pre.mean_val_loss, label='validation loss - pretrained')
+    plt.plot(df_pre.epoch, df_pre.mean_val_accuracy, label='validation accuracy - pretrained')
 
-#         print(f"{parent_dir}/fold_{fold+1}")
+    plt.fill_between(df_pre.epoch, df_pre.mean_val_loss+df_pre.std_val_loss, df_pre.mean_val_loss-df_pre.std_val_loss, alpha=0.2)
+    plt.fill_between(df_pre.epoch, df_pre.mean_val_accuracy+df_pre.std_val_accuracy, df_pre.mean_val_accuracy-df_pre.std_val_accuracy, alpha=0.2)
 
-#         df = pd.read_csv(
-#             f"{parent_dir}/fold_{fold+1}/lightning_logs/version_{version}/metrics.csv"
-#         )
+    plt.legend()
 
-#         dfs.append(df)
-
-#     all_folds = pd.concat(dfs, ignore_index=True)
-#     grouped = (
-#         all_folds.groupby("epoch")
-#         .agg({"val_accuracy": ["mean", "std"], "val_loss": ["mean", "std"]})
-#         .reset_index()
-#     )
-
-#     grouped.columns = [
-#         "epoch",
-#         "mean_val_accuracy",
-#         "std_val_accuracy",
-#         "mean_val_loss",
-#         "std_val_loss",
-#     ]
-
-#     if plot:
-
-#         plt.plot(grouped.epoch, grouped.mean_val_loss, label="validation loss")
-#         plt.fill_between(
-#             grouped.epoch,
-#             grouped.mean_val_loss + grouped.std_val_loss,
-#             grouped.mean_val_loss - grouped.std_val_loss,
-#             color="tab:blue",
-#             alpha=0.4,
-#         )
-
-#         plt.plot(grouped.epoch, grouped.mean_val_accuracy, label="validation accuracy")
-#         plt.fill_between(
-#             grouped.epoch,
-#             grouped.mean_val_accuracy + grouped.std_val_accuracy,
-#             grouped.mean_val_accuracy - grouped.std_val_accuracy,
-#             color="tab:green",
-#             alpha=0.4,
-#         )
-
-#         plt.xlabel("Epoch")
-
-#         plt.title("Mean Accuracy and Validation loss with Standard Deviation")
-#         plt.legend()
-#         plt.grid(True)
-
-#     return grouped
+    if save:
+        plt.savefig(f'/mnt/g/My Drive/structure-loss-classification/results/ResNet18_{classification_mode}.pdf', bbox_inches='tight')
 
 def display_metrics(
     csv_file: str,
