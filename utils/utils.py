@@ -5,6 +5,8 @@ import os
 from datasets.datasets import CustomDatasetWrapper
 from lightning_modules.lightning_modules import LitModelBase
 import pandas as pd
+from sklearn.model_selection import train_test_split
+import torch
 
 def load_targets(data: CustomDatasetWrapper, from_dir: str = None):
     if from_dir is None:
@@ -69,3 +71,14 @@ def get_stat_metrics(
     grouped.to_csv(f'results/{dir_name}.csv')
 
     return grouped
+
+
+def get_train_val_data(data: CustomDatasetWrapper, targets: list, test_size: float = 0.2, random_state: int = 42):
+    train_idx, val_idx, _, _ = train_test_split(
+    range(len(data)), targets, test_size=test_size, random_state=random_state
+)
+
+    train_data = torch.utils.data.Subset(data, train_idx)
+    val_data = torch.utils.data.Subset(data, val_idx)
+
+    return train_data, val_data

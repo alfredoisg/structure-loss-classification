@@ -108,6 +108,41 @@ class LitLeNet5(LitModelBase):
     def forward(self, x):
         return self.model(x)
 
+class LitVGG16(LitModelBase):
+    def __init__(
+        self,
+        num_classes: int,
+        learning_rate: float,
+        size_layer_1: int = 4096,
+        size_layer_2: int = 4096,
+        size_layer_3: int = 1000,
+        pretrained: bool = False,
+    ) -> None:
+        super().__init__(
+            num_classes,
+            learning_rate,
+            pretrained=pretrained,
+        )
+
+        self.size_layer_1 = size_layer_1
+        self.size_layer_2 = size_layer_2
+        self.size_layer_3 = size_layer_3
+
+        self.model = VGG16(
+            num_classes=num_classes,
+            size_layer_1=size_layer_1,
+            size_layer_2=size_layer_2,
+            size_layer_3=size_layer_3
+        )
+
+        if self.pretrained:
+            self.model.load_state_dict(
+                torch.load("path_to_custom_pretrained_weights.pth")
+            )
+
+    def forward(self, x):
+        return self.model(x)
+
 
 class LitResNet18(LitModelBase):
     def __init__(

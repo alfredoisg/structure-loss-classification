@@ -158,6 +158,77 @@ def train_with_cv(
     return all_metrics
 
 
+def incremental_training(
+    model_class: type,  # Assuming you can instantiate the model with this
+    model_params: dict,
+    trainer_config: dict,
+    data_module,
+    initial_ckpt_path: str = None,
+    max_epochs: int = 100,
+    increment_epochs: int = 5,
+    early_stop_patience: int = 10,  # Assuming early stopping is desired
+) -> dict:
+    """
+    Trains a PyTorch Lightning model incrementally for a number of epochs and continues training incrementally
+    until max_epochs is reached or early stopping is triggered.
+    """
+    
+    model = model_class(**model_params)
+    if initial_ckpt_path:
+        # Load the initial checkpoint if provided
+        model.load_from_checkpoint(initial_ckpt_path)
+
+    for start_epoch in range(0, max_epochs, increment_epochs):
+        # Stop if we're already at max_epochs
+        if start_epoch >= max_epochs:
+            break
+
+        # Update the trainer configuration for incremental training
+        trainer_config_updated = trainer_config.copy()
+        trainer_config_updated["max_epochs"] = start_epoch + increment_epochs
+        # Set the path to the previous best model if it exists
+        ckpt_path = trainer.checkpoint_callback.best_model_path if start_epoch > 0 else None
+
+        print(ckpt_path)
+        # Define callbacks
+        early_stop_callback = EarlyStopping(
+            monitor="val_loss", patience=early_stop_patience, min_delta=0.05
+        )
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=trainer_config["save_dir"],
+            filename=f"{start_epoch + increment_epochs:02d}-{{val_loss:.2f}}",
+            monitor="val_loss",
+            save_top_k=1,
+            mode="min",
+        )
+        callbacks = [checkpoint_callback, early_stop_callback]
+
+        # Create a new trainer instance
+        trainer = pl.Trainer(
+            accelerator=trainer_config_updated["accelerator"],
+            devices=trainer_config_updated["devices"],
+            max_epochs=trainer_config_updated["max_epochs"],
+            precision=trainer_config_updated["precision"],
+            log_every_n_steps=trainer_config_updated["n_steps"],
+            callbacks=callbacks,
+            logger=CSVLogger(trainer_config_updated["save_dir"]),
+            enable_checkpointing=True,
+        )
+
+        # Train the model incrementally
+        trainer.fit(model, datamodule=data_module, ckpt_path=ckpt_path)
+
+        # Check if early stopping was triggered
+        if trainer.should_stop:
+            print(f"Training stopped early at epoch {start_epoch}.")
+            break
+
+    val_metrics = trainer.callback_metrics
+    val_metrics_cpu = {key: val.cpu().item() for key, val in val_metrics.items()}
+
+    return val_metrics_cpu
+
+
 def get_features(model: nn.Module, layers: list, data_loader: DataLoader, device: str):
 
     feature_extractor = create_feature_extractor(model, layers)
@@ -168,7 +239,9 @@ def get_features(model: nn.Module, layers: list, data_loader: DataLoader, device
     feature_extractor.eval()
     with torch.no_grad():
         for image, label in data_loader:
-            image, label = image.to(device), label.to(device)
+            image = image.to(device).unsqueeze(0)
+            label = torch.tensor([label], device=device) if isinstance(label, int) else label.to(device)
+
             predicted_dict = feature_extractor(image)
 
             for layer_name in layers:
