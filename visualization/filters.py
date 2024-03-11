@@ -33,15 +33,22 @@ def display_filters(
     )  # Add 1 for the original image
 
     # Display the original image
-    axes[0].imshow(image_data)
+    axes[0].imshow(np.flip(image_data, axis=0))
     axes[0].set_title("Original Image")
 
     for count, ax in enumerate(
         axes[1:], 1
     ):  # Start from 1 to leave space for the original image
-        collapsed_feature_map = collapse_func(
-            features[layers[count - 1]][img_num], axis=0
-        )
+        # collapsed_feature_map = collapse_func(
+        #     features[layers[count - 1]][img_num], axis=0
+        # )
+        collapsed_feature_map = collapse_func(features[layers[count - 1]][img_num], axis=0)
+
+        if collapsed_feature_map.ndim > 2:
+            collapsed_feature_map = collapsed_feature_map.squeeze()
+        # Ensure the data is at least 2D
+        if collapsed_feature_map.ndim < 2:
+            collapsed_feature_map = collapsed_feature_map.reshape(1, -1)
         im = ax.imshow(collapsed_feature_map.squeeze(), cmap=cmap)
         ax.set_title(f"{name_layers[count - 1]}")
 
