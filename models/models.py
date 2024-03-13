@@ -5,7 +5,9 @@ from torchvision import models
 
 
 class LeNet5(nn.Module):
-    def __init__(self, num_classes: int, size_layer_1: int, size_layer_2: int) -> None:
+    def __init__(
+        self, num_classes: int, size_layer_1: int = 84, size_layer_2: int = 10
+    ) -> None:
         super().__init__()
         self.num_classes = num_classes
         self.size_layer_1 = size_layer_1
@@ -52,7 +54,11 @@ class LeNet5(nn.Module):
 
 class VGG16(nn.Module):
     def __init__(
-        self, num_classes: int, size_layer_1: int, size_layer_2: int, size_layer_3: int
+        self,
+        num_classes: int,
+        size_layer_1: int = 4096,
+        size_layer_2: int = 4096,
+        size_layer_3: int = 1000,
     ) -> None:
         super().__init__()
         self.num_classes = num_classes

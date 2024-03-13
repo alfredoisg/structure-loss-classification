@@ -200,7 +200,7 @@ def hypertune_classifier(
 
     # Splitting the dataset
     X_train, X_test, y_train, y_test = train_test_split(
-        X, Y, test_size=test_size, shuffle=False
+        X, Y, test_size=test_size, shuffle=True
     )
 
     # Fit the grid search to the data
