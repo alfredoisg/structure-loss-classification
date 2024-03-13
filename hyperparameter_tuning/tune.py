@@ -202,17 +202,15 @@ def hypertune_classifier(
     X_train, X_test, y_train, y_test = train_test_split(
         X, Y, test_size=test_size, shuffle=False
     )
-    X_train_flat = X_train.reshape(X_train.shape[0], -1)
-    X_test_flat = X_test.reshape(X_test.shape[0], -1)
 
     # Fit the grid search to the data
-    grid_search.fit(X_train_flat, y_train)
+    grid_search.fit(X_train, y_train)
 
     # Best model
     best_model = grid_search.best_estimator_
 
     # Predictions
-    y_pred = best_model.predict(X_test_flat)
+    y_pred = best_model.predict(X_test)
 
     # Evaluation
     score = accuracy_score(y_test, y_pred)
