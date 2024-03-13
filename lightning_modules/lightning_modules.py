@@ -108,6 +108,7 @@ class LitLeNet5(LitModelBase):
     def forward(self, x):
         return self.model(x)
 
+
 class LitVGG16(LitModelBase):
     def __init__(
         self,
@@ -132,7 +133,7 @@ class LitVGG16(LitModelBase):
             num_classes=num_classes,
             size_layer_1=size_layer_1,
             size_layer_2=size_layer_2,
-            size_layer_3=size_layer_3
+            size_layer_3=size_layer_3,
         )
 
         if self.pretrained:
@@ -149,16 +150,14 @@ class LitResNet18(LitModelBase):
         self, num_classes: int, learning_rate: float, pretrained: bool = False
     ) -> None:
         super().__init__(num_classes, learning_rate, pretrained)
-     
-        self.model = ResNet18(num_classes=num_classes)
 
+        self.model = ResNet18(num_classes=num_classes)
 
         if pretrained:
             for param in self.model.resnet18.parameters():
                 param.requires_grad = False
             for param in self.model.resnet18.fc.parameters():
                 param.requires_grad = True
-
 
     def forward(self, x):
         return self.model(x)

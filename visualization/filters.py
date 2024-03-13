@@ -42,7 +42,9 @@ def display_filters(
         # collapsed_feature_map = collapse_func(
         #     features[layers[count - 1]][img_num], axis=0
         # )
-        collapsed_feature_map = collapse_func(features[layers[count - 1]][img_num], axis=0)
+        collapsed_feature_map = collapse_func(
+            features[layers[count - 1]][img_num], axis=0
+        )
 
         if collapsed_feature_map.ndim > 2:
             collapsed_feature_map = collapsed_feature_map.squeeze()

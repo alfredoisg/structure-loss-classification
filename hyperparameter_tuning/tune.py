@@ -1,9 +1,14 @@
 import os
 
 import torch
+import numpy as np
 
 import pytorch_lightning as pl
 from pytorch_lightning import LightningDataModule, LightningModule
+
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
 import ray
 from ray import tune, train
@@ -164,3 +169,55 @@ class HyperParameterTuner:
         print(" Best hyperparameter configuration found: ", best_config)
 
         return best_config
+
+
+def hypertune_classifier(
+    ml_model,
+    X: np.array,
+    Y: np.array,
+    test_size: float,
+    param_grid: dict,
+    scoring_metric: str = "accuracy",
+) -> dict:
+    """
+    Function to tune hyperparameters for classification models.
+
+    :param ml_model: The machine learning model class to be tuned
+    :param X: Feature dataset as a numpy array
+    :param Y: Target dataset as a numpy array
+    :param test_size: Fraction of the dataset to be used as test set
+    :param param_grid: Dictionary with parameters names (str) as keys and lists of parameter settings to try as values
+    :param scoring_metric: Metric to be used for evaluating the predictions on the test set. Default is 'accuracy'.
+    :return: Dictionary of the best parameters found by GridSearchCV
+    """
+
+    model = ml_model()
+
+    # Set up GridSearchCV
+    grid_search = GridSearchCV(
+        model, param_grid, cv=5, scoring=scoring_metric, n_jobs=-1
+    )
+
+    # Splitting the dataset
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, Y, test_size=test_size, shuffle=False
+    )
+    X_train_flat = X_train.reshape(X_train.shape[0], -1)
+    X_test_flat = X_test.reshape(X_test.shape[0], -1)
+
+    # Fit the grid search to the data
+    grid_search.fit(X_train_flat, y_train)
+
+    # Best model
+    best_model = grid_search.best_estimator_
+
+    # Predictions
+    y_pred = best_model.predict(X_test_flat)
+
+    # Evaluation
+    score = accuracy_score(y_test, y_pred)
+    print(f"Accuracy: {score}")
+
+    print(f"Best Parameters: {grid_search.best_params_}")
+
+    return grid_search.best_params_

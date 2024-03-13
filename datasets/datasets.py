@@ -16,6 +16,10 @@ class CustomDatasetWrapper(Dataset):
         self.classification_mode = classification_mode
         self.label_map, self.valid_indices = self._create_label_map()
 
+    @property
+    def classes(self):
+        return self.dataset.classes
+
     def _create_label_map(self):
         label_map = {}
         valid_indices = []

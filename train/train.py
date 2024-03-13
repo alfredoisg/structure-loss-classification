@@ -14,6 +14,8 @@ from datasets.datasets import CustomDatasetWrapper
 from datasets.data_modules import CustomImageDataModule
 from lightning_modules.lightning_modules import LitModelBase
 
+import os
+
 
 def train_model(
     model: pl.LightningModule,
@@ -172,7 +174,7 @@ def incremental_training(
     Trains a PyTorch Lightning model incrementally for a number of epochs and continues training incrementally
     until max_epochs is reached or early stopping is triggered.
     """
-    
+
     model = model_class(**model_params)
     if initial_ckpt_path:
         # Load the initial checkpoint if provided
@@ -187,7 +189,9 @@ def incremental_training(
         trainer_config_updated = trainer_config.copy()
         trainer_config_updated["max_epochs"] = start_epoch + increment_epochs
         # Set the path to the previous best model if it exists
-        ckpt_path = trainer.checkpoint_callback.best_model_path if start_epoch > 0 else None
+        ckpt_path = (
+            trainer.checkpoint_callback.best_model_path if start_epoch > 0 else None
+        )
 
         print(ckpt_path)
         # Define callbacks
@@ -229,27 +233,49 @@ def incremental_training(
     return val_metrics_cpu
 
 
-def get_features(model: nn.Module, layers: list, data_loader: DataLoader, device: str):
+def get_features(
+    model: nn.Module,
+    layers: list,
+    data_loader: DataLoader,
+    device: str,
+    classification_mode: str,
+    path_to_file: str = None,
+):
 
-    feature_extractor = create_feature_extractor(model, layers)
+    if path_to_file is None:
+        path_to_file = f"logdir/features_labels_{model.__class__.__name__}_{classification_mode}.pth"
 
-    features = {layer_name: [] for layer_name in layers}
-    labels = []
+    try:
+        print("Attempting to load cached features and labels...")
+        features, labels = torch.load(path_to_file)
+        print("Loaded features and labels from cache.")
 
-    feature_extractor.eval()
-    with torch.no_grad():
-        for image, label in data_loader:
-            image = image.to(device).unsqueeze(0)
-            label = torch.tensor([label], device=device) if isinstance(label, int) else label.to(device)
+    except FileNotFoundError:
+        print("Cache not found. Extracting features and labels...")
+        feature_extractor = create_feature_extractor(model, layers)
 
-            predicted_dict = feature_extractor(image)
+        features = {layer_name: [] for layer_name in layers}
+        labels = []
 
-            for layer_name in layers:
-                features[layer_name].extend(predicted_dict[layer_name].cpu().numpy())
-            labels.extend(label.cpu().numpy())
+        feature_extractor.eval()
+        with torch.no_grad():
+            for image, label in data_loader:
+                image = image.to(device).unsqueeze(0)
+                label = (
+                    torch.tensor([label], device=device)
+                    if isinstance(label, int)
+                    else label.to(device)
+                )
+
+                predicted_dict = feature_extractor(image)
+
+                for layer_name in layers:
+                    features[layer_name].extend(
+                        predicted_dict[layer_name].cpu().numpy()
+                    )
+                labels.extend(label.cpu().numpy())
+
+        torch.save((features, labels), path_to_file)
+        print("Features and labels extracted and saved to cache.")
 
     return features, labels
-
-
-def train_svc():
-    pass
