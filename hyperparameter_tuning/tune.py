@@ -175,28 +175,17 @@ class HyperParameterTuner:
 
 
 class SKLearnHyperParameterTuner:
-    def __init__(
-        self,
-        model,
-        search_space: dict,
-        X: np.array,
-        y: np.array,
-        cv=5,
-        scoring="accuracy",
-        resources=None,
-        num_samples=5,
-    ):
+    def __init__(self, model, search_space: dict, X: np.array, y: np.array, cv=4, scoring='accuracy', resources=None, num_samples=5):
         self.model = model
         self.search_space = search_space
         self.X = ray.put(X)
         self.y = ray.put(y)
         self.cv = cv
         self.scoring = scoring
-        self.resources = resources or {
-            "num_cpus": os.cpu_count(),
-            "num_gpus": torch.cuda.device_count(),
-        }
+        self.resources = resources or {"num_cpus": os.cpu_count(),
+                                       "num_gpus": torch.cuda.device_count()}
         self.num_samples = num_samples
+   
 
     def auto_init_ray(self):
         try:
@@ -207,41 +196,38 @@ class SKLearnHyperParameterTuner:
             ray.shutdown()
             ray.init(**self.resources)
 
+
     def train_model(self, config):
         X = ray.get(self.X)
         y = ray.get(self.y)
+    
+       
+        model_params = {k: v for k, v in config.items() if k != 'model'}
+        model = self.model(**model_params)
 
-        model = self.model
-
-        cv_scores = cross_val_score(model, X, y, cv=self.cv, scoring=self.scoring)
+        cv_scores = cross_val_score(model, X, y, cv=self.cv,)# scoring=self.scoring)
         mean_cv_score = np.mean(cv_scores)
 
-        ray.train.report(metrics={"mean_cv_score": mean_cv_score})
+        ray.train.report(metrics={'mean_cv_score': mean_cv_score})
+
 
     def hypertune(self):
         self.auto_init_ray()
-        print(f"------ {self.resources} -----")
+        print(f'------ {self.resources} -----')
         use_gpu = True if self.resources["num_gpus"] > 0 else False
-        my_trainable = tune.with_resources(
-            trainable=self.train_model,
-            resources=ScalingConfig(  # num_workers=12,
-                # use_gpu=use_gpu,
-                trainer_resources={
-                    "CPU": self.resources["num_cpus"],
-                }
-            ),
-        )
+        my_trainable = tune.with_resources(trainable=self.train_model,
+                                           resources= {'cpu': self.num_samples,
+                                                       'gpu': 1})
+                                           
+        my_trainable = self.train_model
+        
+        my_tune_config = tune.TuneConfig(metric="mean_cv_score",
+                                         mode="max",
+                                         num_samples=self.num_samples)
 
-        # my_trainable = self.train_model
-
-        my_tune_config = tune.TuneConfig(
-            metric="mean_cv_score", mode="max", num_samples=self.num_samples
-        )
-
-        analysis = tune.Tuner(
-            trainable=my_trainable,
-            param_space=self.search_space,
-            tune_config=my_tune_config,
+        analysis = tune.Tuner(trainable=my_trainable,
+                              param_space=self.search_space,
+                              tune_config=my_tune_config,
         )
 
         results = analysis.fit()
