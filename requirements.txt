@@ -4,6 +4,7 @@ pandas
 pytorch_lightning
 ray[default]
 ray[tune]
+tune-sklearn
 scienceplots
 scikit_learn
 scipy

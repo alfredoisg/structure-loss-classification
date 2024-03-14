@@ -4,6 +4,8 @@ import os
 import pandas as pd
 
 from lightning_modules.lightning_modules import LitModelBase
+import torch.nn as nn
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
 
 def process_plot_image(data, x: int, plot: bool = False):
@@ -120,3 +122,40 @@ def display_metrics(csv_file: str, save: bool = False, save_dir: str = None):
 
     if save:
         plt.savefig()
+
+
+def display_cm(
+    cm,
+    labels,
+    classifier_name: str,
+    model: nn.Module,
+    classification_mode: str,
+    save: bool = True,
+):
+    """
+    Display and save the confusion matrix as a PDF.
+
+    :param cm: The confusion matrix.
+    :param labels: The labels for the classes.
+
+    """
+
+    # Create the ConfusionMatrixDisplay object
+    cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+
+    # Create a new figure for the confusion matrix
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    # Plot the confusion matrix and customize the appearance
+    cm_display.plot(ax=ax, cmap="viridis")
+    plt.title(classifier_name)
+
+    # Save the confusion matrix as a PDF
+    if save:
+        plt.savefig(
+            f"results/cm-hybrid-training/{model.__class__.__name__}/{classification_mode}/{classifier_name}.pdf",
+            bbox_inches="tight",
+        )
+        print("Confusion Matrix saved")
+    else:
+        plt.show()

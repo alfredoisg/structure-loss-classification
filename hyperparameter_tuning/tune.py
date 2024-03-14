@@ -22,6 +22,9 @@ from ray.train.lightning import (
 )
 from ray.train.torch import TorchTrainer
 
+from ray.tune.sklearn import TuneGridSearchCV
+from ray.tune.sklearn import TuneSearchCV
+from sklearn.model_selection import cross_val_score
 
 from datasets.data_modules import CustomImageDataModule
 from lightning_modules.lightning_modules import LitModelBase
@@ -171,12 +174,90 @@ class HyperParameterTuner:
         return best_config
 
 
+class SKLearnHyperParameterTuner:
+    def __init__(
+        self,
+        model,
+        search_space: dict,
+        X: np.array,
+        y: np.array,
+        cv=5,
+        scoring="accuracy",
+        resources=None,
+        num_samples=5,
+    ):
+        self.model = model
+        self.search_space = search_space
+        self.X = ray.put(X)
+        self.y = ray.put(y)
+        self.cv = cv
+        self.scoring = scoring
+        self.resources = resources or {
+            "num_cpus": os.cpu_count(),
+            "num_gpus": torch.cuda.device_count(),
+        }
+        self.num_samples = num_samples
+
+    def auto_init_ray(self):
+        try:
+            if not ray.is_initialized():
+                ray.init(**self.resources)
+        except RuntimeError as e:
+            print(f"Error initializing Ray: {e}")
+            ray.shutdown()
+            ray.init(**self.resources)
+
+    def train_model(self, config):
+        X = ray.get(self.X)
+        y = ray.get(self.y)
+
+        model = self.model
+
+        cv_scores = cross_val_score(model, X, y, cv=self.cv, scoring=self.scoring)
+        mean_cv_score = np.mean(cv_scores)
+
+        ray.train.report(metrics={"mean_cv_score": mean_cv_score})
+
+    def hypertune(self):
+        self.auto_init_ray()
+        print(f"------ {self.resources} -----")
+        use_gpu = True if self.resources["num_gpus"] > 0 else False
+        my_trainable = tune.with_resources(
+            trainable=self.train_model,
+            resources=ScalingConfig(  # num_workers=12,
+                # use_gpu=use_gpu,
+                trainer_resources={
+                    "CPU": self.resources["num_cpus"],
+                }
+            ),
+        )
+
+        # my_trainable = self.train_model
+
+        my_tune_config = tune.TuneConfig(
+            metric="mean_cv_score", mode="max", num_samples=self.num_samples
+        )
+
+        analysis = tune.Tuner(
+            trainable=my_trainable,
+            param_space=self.search_space,
+            tune_config=my_tune_config,
+        )
+
+        results = analysis.fit()
+        best_config = results.get_best_result(metric="mean_cv_score", mode="max").config
+        print("Best hyperparameter configuration found:", best_config)
+
+        return best_config
+
+
 def hypertune_classifier(
     ml_model,
     X: np.array,
     Y: np.array,
     test_size: float,
     param_grid: dict,
+    use_ray: bool = False,
     scoring_metric: str = "accuracy",
 ) -> dict:
     """
@@ -194,9 +275,17 @@ def hypertune_classifier(
     model = ml_model()
 
     # Set up GridSearchCV
-    grid_search = GridSearchCV(
-        model, param_grid, cv=5, scoring=scoring_metric, n_jobs=-1
-    )
+
+    if use_ray:
+
+        grid_search = TuneGridSearchCV(
+            model, param_grid, early_stopping=False, use_gpu=True, max_iters=10
+        )
+
+    else:
+        grid_search = GridSearchCV(
+            model, param_grid, cv=5, scoring=scoring_metric, n_jobs=-1
+        )
 
     # Splitting the dataset
     X_train, X_test, y_train, y_test = train_test_split(
