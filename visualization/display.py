@@ -2,11 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
+import scienceplots
 
 from lightning_modules.lightning_modules import LitModelBase
 import torch.nn as nn
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
+plt.style.use(['science', 'notebook', 'grid'])
 
 def process_plot_image(data, x: int, plot: bool = False):
     image_data = np.transpose(data[x][0])

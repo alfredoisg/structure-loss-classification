@@ -4,14 +4,13 @@ import torch
 import numpy as np
 
 import pytorch_lightning as pl
-from pytorch_lightning import LightningDataModule, LightningModule
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 import ray
-from ray import tune, train
+from ray import tune
 from ray.tune.schedulers import ASHAScheduler
 from ray.train import RunConfig, ScalingConfig, CheckpointConfig
 from ray.train.lightning import (
@@ -23,53 +22,47 @@ from ray.train.lightning import (
 from ray.train.torch import TorchTrainer
 
 from ray.tune.sklearn import TuneGridSearchCV
-from ray.tune.sklearn import TuneSearchCV
 from sklearn.model_selection import cross_val_score
 
 from datasets.data_modules import CustomImageDataModule
 from lightning_modules.lightning_modules import LitModelBase
 
 
+
 class HyperParameterTuner:
     """
-    A class for hyperparameter tuning using PyTorch Lightning models and Ray Tune.
+    A class for hyperparameter tuning of PyTorch Lightning models using Ray Tune.
 
-    This class encapsulates the setup and execution of hyperparameter tuning experiments,
-    allowing for systematic searches across a defined hyperparameter space using Ray Tune's
-    optimization algorithms and PyTorch Lightning's training framework.
+    This class facilitates the systematic exploration of a hyperparameter space for
+    PyTorch Lightning models in conjunction with a custom PyTorch Lightning DataModule.
+    It leverages Ray Tune for distributed hyperparameter tuning, potentially utilizing
+    both CPUs and GPUs as specified.
 
     Parameters:
-    - model (LitModelBase): A PyTorch Lightning model to be tuned.
-    - datamodule (CustomImageDataModule): A PyTorch Lightning DataModule providing the dataset for training and validation.
-    - search_space (dict): A dictionary defining the search space for hyperparameters.
-                            Keys are hyperparameter names, and values are Ray Tune search spaces (e.g., tune.grid_search, tune.uniform).
-    - resources (dict, optional): A dictionary specifying the computational resources to use for the tuning process.
-                                  Defaults to using all available CPUs and GPUs.
-                                  Expected keys are 'num_cpus' and 'num_gpus'.
-    - num_samples (int, optional): The number of samples or trials to run in the tuning process. Defaults to 3.
-    - num_epochs (int, optional): The number of epochs to train each trial. Defaults to 2.
-
-    Methods:
-    - auto_init_ray(): Initializes or resets the Ray environment with the specified resources.
-    - train_func(config): The training function that will be passed to Ray Tune. It sets up and runs the PyTorch Lightning Trainer.
-    - hypertune(): Executes the hyperparameter tuning process, logging results and returning the best configuration found.
+    - model (LitModelBase): The PyTorch Lightning model class to be tuned.
+    - datamodule (CustomImageDataModule): The PyTorch Lightning DataModule instance
+      providing the dataset for training and validation.
+    - search_space (dict): A dictionary defining the search space for hyperparameters,
+      where keys are hyperparameter names and values are distributions or lists of
+      potential values.
+    - resources (dict, optional): A dictionary specifying the computational resources
+      to use for the tuning process, with keys 'num_cpus' and 'num_gpus'. Defaults to
+      using all available CPUs and GPUs.
+    - num_samples (int, optional): The number of hyperparameter combinations to sample
+      and evaluate. Defaults to 3.
+    - num_epochs (int, optional): The number of epochs for which to train each model
+      configuration. Defaults to 2.
 
     Example usage:
-    ```python
-    model = MyLightningModel(num_classes=2,
-                             size_layer_1=default_config['layer_1_size'],
-                             size_layer_2=default_config['layer_2_size'],
-                             learning_rate=default_config['lr'])
-
-    datamodule = MyDataModule()
-    search_space = {
-        "lr": tune.loguniform(1e-4, 1e-1),
-        "batch_size": tune.choice([32, 64, 128])
-    }
-    tuner = HyperParameterTuner(model, datamodule, search_space, num_samples=10, num_epochs=10)
-    best_config = tuner.hypertune()
-    print("Best hyperparameters found were: ", best_config)
-    ```
+        >>> model = MyLightningModel
+        >>> datamodule = MyDataModule()
+        >>> search_space = {
+        ...     "lr": tune.loguniform(1e-4, 1e-1),
+        ...     "batch_size": tune.choice([32, 64, 128])
+        ... }
+        >>> tuner = HyperParameterTuner(model, datamodule, search_space, num_samples=10, num_epochs=10)
+        >>> best_config = tuner.hypertune()
+        >>> print("Best hyperparameters found were: ", best_config)
     """
 
     def __init__(
@@ -174,18 +167,66 @@ class HyperParameterTuner:
         return best_config
 
 
+
 class SKLearnHyperParameterTuner:
-    def __init__(self, model, search_space: dict, X: np.array, y: np.array, cv=4, scoring='accuracy', resources=None, num_samples=5):
+    """
+    A class for hyperparameter tuning of scikit-learn models using Ray Tune with
+    optional GPU acceleration.
+
+    This class supports the hyperparameter tuning of any scikit-learn-compatible
+    models by leveraging Ray Tune for distributed and parallelized tuning sessions.
+    It supports using both CPUs and GPUs (if applicable) to potentially accelerate
+    the tuning process.
+
+    Parameters:
+    - model: The scikit-learn model class or a compatible model with a similar interface
+      to be tuned.
+    - search_space (dict): A dictionary defining the hyperparameter search space.
+    - X (np.array): The feature dataset.
+    - y (np.array): The target dataset.
+    - use_gpu (bool, optional): Whether to utilize GPUs for the tuning process, if available.
+      Defaults to True.
+    - cv (int, optional): The number of cross-validation folds. Defaults to 4.
+    - scoring (str, optional): The scoring metric to use for evaluation. Defaults to 'accuracy'.
+    - resources (dict, optional): A dictionary specifying the computational resources
+      to use for the tuning process, with keys 'num_cpus' and 'num_gpus'. Defaults to
+      using all available CPUs and GPUs.
+    - num_samples (int, optional): The number of hyperparameter combinations to sample
+      and evaluate. Defaults to 5.
+
+    Example usage:
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> X, y = load_data()
+        >>> param_grid = {
+        ...     'n_estimators': tune.choice([10, 100, 1000]),
+        ...     'max_depth': tune.choice([5, 10, 20, None])
+        ... }
+        >>> tuner = SKLearnHyperParameterTuner(RandomForestClassifier, param_grid, X, y)
+        >>> best_params = tuner.hypertune()
+        >>> print("Best hyperparameters found:", best_params)
+    """
+
+    def __init__(self,
+                 model,
+                 search_space: dict,
+                 X: np.array, y: np.array,
+                 use_gpu: bool = True,
+                 cv=4,
+                 scoring='accuracy',
+                 resources=None,
+                 num_samples=5):
+        
         self.model = model
         self.search_space = search_space
         self.X = ray.put(X)
         self.y = ray.put(y)
+        self.use_gpu = use_gpu
         self.cv = cv
         self.scoring = scoring
         self.resources = resources or {"num_cpus": os.cpu_count(),
-                                       "num_gpus": torch.cuda.device_count()}
+                                       "num_gpus": torch.cuda.device_count() if use_gpu else 0}
         self.num_samples = num_samples
-   
+
 
     def auto_init_ray(self):
         try:
@@ -195,13 +236,14 @@ class SKLearnHyperParameterTuner:
             print(f"Error initializing Ray: {e}")
             ray.shutdown()
             ray.init(**self.resources)
+            print(self.resources)
 
 
     def train_model(self, config):
         X = ray.get(self.X)
         y = ray.get(self.y)
-    
-       
+
+
         model_params = {k: v for k, v in config.items() if k != 'model'}
         model = self.model(**model_params)
 
@@ -214,13 +256,11 @@ class SKLearnHyperParameterTuner:
     def hypertune(self):
         self.auto_init_ray()
         print(f'------ {self.resources} -----')
-        use_gpu = True if self.resources["num_gpus"] > 0 else False
         my_trainable = tune.with_resources(trainable=self.train_model,
-                                           resources= {'cpu': self.num_samples,
-                                                       'gpu': 1})
-                                           
-        my_trainable = self.train_model
-        
+                                           resources= {'cpu': self.resources['num_cpus'],
+                                                       'gpu': self.resources['num_gpus'],
+                                                       })
+
         my_tune_config = tune.TuneConfig(metric="mean_cv_score",
                                          mode="max",
                                          num_samples=self.num_samples)
@@ -233,6 +273,8 @@ class SKLearnHyperParameterTuner:
         results = analysis.fit()
         best_config = results.get_best_result(metric="mean_cv_score", mode="max").config
         print("Best hyperparameter configuration found:", best_config)
+
+        ray.shutdown()
 
         return best_config
 
@@ -247,16 +289,34 @@ def hypertune_classifier(
     scoring_metric: str = "accuracy",
 ) -> dict:
     """
-    Function to tune hyperparameters for classification models.
+    Simplifies the hyperparameter tuning process for classification models, supporting
+    both traditional GridSearchCV and distributed tuning via Ray Tune.
 
-    :param ml_model: The machine learning model class to be tuned
-    :param X: Feature dataset as a numpy array
-    :param Y: Target dataset as a numpy array
-    :param test_size: Fraction of the dataset to be used as test set
-    :param param_grid: Dictionary with parameters names (str) as keys and lists of parameter settings to try as values
-    :param scoring_metric: Metric to be used for evaluating the predictions on the test set. Default is 'accuracy'.
-    :return: Dictionary of the best parameters found by GridSearchCV
+    Parameters:
+    - ml_model: The machine learning model class (e.g., from scikit-learn) to be tuned.
+    - X (np.array): The feature dataset.
+    - Y (np.array): The target dataset.
+    - test_size (float): The proportion of the dataset to use as the test set.
+    - param_grid (dict): The hyperparameter search space.
+    - use_ray (bool, optional): Whether to use Ray Tune for distributed tuning. Defaults to False.
+    - scoring_metric (str, optional): The metric to use for scoring the model performance.
+      Defaults to "accuracy".
+
+    Returns:
+    - dict: The best hyperparameter configuration found during the tuning process.
+
+    Example usage:
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> X, y = load_iris(return_X_y=True)
+        >>> param_grid = {
+        ...     'n_estimators': [10, 100, 1000],
+        ...     'max_depth': [5, 10, None]
+        ... }
+        >>> best_params = hypertune_classifier(RandomForestClassifier, X, y, 0.2, param_grid, use_ray=True)
+        >>> print("Best hyperparameters:", best_params)
     """
+
 
     model = ml_model()
 
