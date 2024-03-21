@@ -19,6 +19,7 @@ from ray.train.lightning import (
     RayTrainReportCallback,
     prepare_trainer,
 )
+from ray.tune import JupyterNotebookReporter
 from ray.train.torch import TorchTrainer
 
 from ray.tune.sklearn import TuneGridSearchCV
@@ -31,43 +32,30 @@ from lightning_modules.lightning_modules import LitModelBase
 
 class HyperParameterTuner:
     """
-    A class for hyperparameter tuning of PyTorch Lightning models using Ray Tune.
-
-    This class facilitates the systematic exploration of a hyperparameter space for
-    PyTorch Lightning models in conjunction with a custom PyTorch Lightning DataModule.
-    It leverages Ray Tune for distributed hyperparameter tuning, potentially utilizing
-    both CPUs and GPUs as specified.
+    hyperparameter tuning of PyTorch Lightning models using Ray Tune.
 
     Parameters:
-    - model (LitModelBase): The PyTorch Lightning model class to be tuned.
-    - datamodule (CustomImageDataModule): The PyTorch Lightning DataModule instance
-      providing the dataset for training and validation.
-    - search_space (dict): A dictionary defining the search space for hyperparameters,
-      where keys are hyperparameter names and values are distributions or lists of
-      potential values.
-    - resources (dict, optional): A dictionary specifying the computational resources
-      to use for the tuning process, with keys 'num_cpus' and 'num_gpus'. Defaults to
-      using all available CPUs and GPUs.
-    - num_samples (int, optional): The number of hyperparameter combinations to sample
-      and evaluate. Defaults to 3.
-    - num_epochs (int, optional): The number of epochs for which to train each model
-      configuration. Defaults to 2.
+    - model_class (LitModelBase): Class of the PyTorch Lightning model to be tuned.
+    - datamodule (CustomImageDataModule): PyTorch Lightning DataModule instance providing the dataset.
+    - search_space (dict): Dictionary defining the search space for hyperparameters.
+    - resources (dict, optional): Resources for the tuning process (num_cpus, num_gpus).
+    - num_samples (int, optional): Number of hyperparameter combinations to sample.
+    - num_epochs (int, optional): Number of epochs to train each model configuration.
 
-    Example usage:
-        >>> model = MyLightningModel
-        >>> datamodule = MyDataModule()
-        >>> search_space = {
-        ...     "lr": tune.loguniform(1e-4, 1e-1),
-        ...     "batch_size": tune.choice([32, 64, 128])
-        ... }
-        >>> tuner = HyperParameterTuner(model, datamodule, search_space, num_samples=10, num_epochs=10)
+    Usage:
+        >>> model_class = YourModelClass
+        >>> datamodule = YourDataModule(...)
+        >>> search_space = {'model_params': {...}, 'batch_size': tune.choice([32, 64, 128])}
+        >>> tuner = HyperParameterTuner(model_class, datamodule, search_space, num_samples=10, num_epochs=10)
         >>> best_config = tuner.hypertune()
         >>> print("Best hyperparameters found were: ", best_config)
     """
 
+
+
     def __init__(
         self,
-        model: LitModelBase,
+        model_class: LitModelBase,
         datamodule: CustomImageDataModule,
         search_space: dict,
         resources: dict = {
@@ -78,7 +66,7 @@ class HyperParameterTuner:
         num_epochs: int = 2,
     ) -> None:
 
-        self.model = model
+        self.model_class = model_class
         self.datamodule = datamodule
         self.search_space = search_space
         self.resources = resources
@@ -97,13 +85,10 @@ class HyperParameterTuner:
 
     def train_func(self, config):
 
+
         dm = self.datamodule
+        model = self.model_class(**config['model_params'])
 
-        model = self.model
-
-        num_steps_per_epoch = max(
-            1, (len(dm.train_dataset) + len(dm.val_dataset)) // config["batch_size"]
-        )
 
         trainer = pl.Trainer(
             devices="auto",
@@ -113,7 +98,7 @@ class HyperParameterTuner:
             plugins=[RayLightningEnvironment()],
             enable_progress_bar=False,
             max_epochs=self.num_epochs,
-            log_every_n_steps=num_steps_per_epoch,
+            # log_every_n_steps=num_steps_per_epoch,
         )
 
         trainer = prepare_trainer(trainer)
@@ -128,7 +113,8 @@ class HyperParameterTuner:
         scaling_config = ScalingConfig(
             num_workers=1,
             use_gpu=use_gpu,
-            trainer_resources={"CPU": self.resources["num_cpus"]},
+            trainer_resources={'CPU': self.resources["num_cpus"]},
+
         )
 
         run_config = RunConfig(
@@ -137,6 +123,7 @@ class HyperParameterTuner:
                 checkpoint_score_attribute="val_accuracy",
                 checkpoint_score_order="max",
             ),
+            progress_reporter=JupyterNotebookReporter()
         )
 
         ray_trainer = TorchTrainer(
@@ -162,9 +149,12 @@ class HyperParameterTuner:
 
         results = tuner.fit()
         best_config = results.get_best_result(metric="val_accuracy", mode="max").config
+        
         print(" Best hyperparameter configuration found: ", best_config)
 
-        return best_config
+        ray.shutdown()
+
+        return best_config['train_loop_config']['model_params']
 
 
 
