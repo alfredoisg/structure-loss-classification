@@ -26,6 +26,17 @@ class LeNet5(nn.Module):
                 nn.ReLU(),
             )
             return layer
+        
+        def fc_layer(in_features, out_features):
+            
+            layer = nn.Linear(
+                in_features=in_features,
+                out_features=out_features
+            )
+            
+            nn.init.kaiming_normal_(layer.weight,
+                                    nonlinearity='relu')
+            return layer
 
         self.convStack = nn.Sequential(
             conv_layer(3, 6),  ## 244x244 --> (244 - 5 + 2*0)/1 +1 = 240x240
@@ -37,13 +48,13 @@ class LeNet5(nn.Module):
 
         self.fcStack = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(54 * 54 * 120, self.size_layer_1),
+            fc_layer(54 * 54 * 120, self.size_layer_1),
             nn.Dropout(p=0.5),
             nn.ReLU(),
-            nn.Linear(self.size_layer_1, self.size_layer_2),
+            fc_layer(self.size_layer_1, self.size_layer_2),
             nn.Dropout(p=0.5),
             nn.ReLU(),
-            nn.Linear(self.size_layer_2, num_classes),
+            fc_layer(self.size_layer_2, num_classes),
         )
 
     def forward(self, x):
