@@ -81,10 +81,10 @@ def get_train_val_data(
     data: CustomDatasetWrapper,
     targets: list,
     test_size: float = 0.2,
-    random_state: int = 42,
+
 ):
     train_idx, val_idx, _, _ = train_test_split(
-        range(len(data)), targets, test_size=test_size, random_state=random_state
+        range(len(data)), targets, test_size=test_size, 
     )
 
     train_data = torch.utils.data.Subset(data, train_idx)
