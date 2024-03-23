@@ -2,8 +2,7 @@ matplotlib
 numpy
 pandas
 pytorch_lightning
-ray[default]
-ray[tune]
+ray[default,tune]==2.8.1
 tune-sklearn
 scienceplots
 scikit_learn
