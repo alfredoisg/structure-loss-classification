@@ -36,10 +36,7 @@ def display_filters(
     axes[0].imshow(np.flip(image_data, axis=0))
     axes[0].set_title("Original Image")
 
-    for count, ax in enumerate(
-        axes[1:], 1
-    ):  
-        
+    for count, ax in enumerate(axes[1:], 1):
 
         feature_map = features[layers[count - 1]][img_num]
         print(f"Feature map shape: {feature_map.shape}")
@@ -47,7 +44,9 @@ def display_filters(
 
         # Check if the shape is invalid for visualization
         if feature_map.shape[-2:] == (1, 1):
-            print(f"Skipping visualization for {layers[count - 1]} due to invalid shape.")
+            print(
+                f"Skipping visualization for {layers[count - 1]} due to invalid shape."
+            )
             continue  # Skip this iteration
 
         collapsed_feature_map = collapse_func(

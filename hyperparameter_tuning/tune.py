@@ -29,7 +29,6 @@ from datasets.data_modules import CustomImageDataModule
 from lightning_modules.lightning_modules import LitModelBase
 
 
-
 class HyperParameterTuner:
     """
     hyperparameter tuning of PyTorch Lightning models using Ray Tune.
@@ -50,8 +49,6 @@ class HyperParameterTuner:
         >>> best_config = tuner.hypertune()
         >>> print("Best hyperparameters found were: ", best_config)
     """
-
-
 
     def __init__(
         self,
@@ -85,10 +82,8 @@ class HyperParameterTuner:
 
     def train_func(self, config):
 
-
         dm = self.datamodule
-        model = self.model_class(**config['model_params'])
-
+        model = self.model_class(**config["model_params"])
 
         trainer = pl.Trainer(
             devices="auto",
@@ -113,8 +108,7 @@ class HyperParameterTuner:
         scaling_config = ScalingConfig(
             num_workers=1,
             use_gpu=use_gpu,
-            trainer_resources={'CPU': self.resources["num_cpus"]},
-
+            trainer_resources={"CPU": self.resources["num_cpus"]},
         )
 
         run_config = RunConfig(
@@ -123,7 +117,7 @@ class HyperParameterTuner:
                 checkpoint_score_attribute="val_accuracy",
                 checkpoint_score_order="max",
             ),
-            progress_reporter=JupyterNotebookReporter()
+            progress_reporter=JupyterNotebookReporter(),
         )
 
         ray_trainer = TorchTrainer(
@@ -149,13 +143,12 @@ class HyperParameterTuner:
 
         results = tuner.fit()
         best_config = results.get_best_result(metric="val_accuracy", mode="max").config
-        
+
         print(" Best hyperparameter configuration found: ", best_config)
 
         ray.shutdown()
 
-        return best_config['train_loop_config']['model_params']
-
+        return best_config["train_loop_config"]["model_params"]
 
 
 class SKLearnHyperParameterTuner:
@@ -196,16 +189,19 @@ class SKLearnHyperParameterTuner:
         >>> print("Best hyperparameters found:", best_params)
     """
 
-    def __init__(self,
-                 model,
-                 search_space: dict,
-                 X: np.array, y: np.array,
-                 use_gpu: bool = True,
-                 cv=4,
-                 scoring='accuracy',
-                 resources=None,
-                 num_samples=5):
-        
+    def __init__(
+        self,
+        model,
+        search_space: dict,
+        X: np.array,
+        y: np.array,
+        use_gpu: bool = True,
+        cv=4,
+        scoring="accuracy",
+        resources=None,
+        num_samples=5,
+    ):
+
         self.model = model
         self.search_space = search_space
         self.X = ray.put(X)
@@ -213,10 +209,11 @@ class SKLearnHyperParameterTuner:
         self.use_gpu = use_gpu
         self.cv = cv
         self.scoring = scoring
-        self.resources = resources or {"num_cpus": os.cpu_count(),
-                                       "num_gpus": torch.cuda.device_count() if use_gpu else 0}
+        self.resources = resources or {
+            "num_cpus": os.cpu_count(),
+            "num_gpus": torch.cuda.device_count() if use_gpu else 0,
+        }
         self.num_samples = num_samples
-
 
     def auto_init_ray(self):
         try:
@@ -228,36 +225,42 @@ class SKLearnHyperParameterTuner:
             ray.init(**self.resources)
             print(self.resources)
 
-
     def train_model(self, config):
         X = ray.get(self.X)
         y = ray.get(self.y)
 
-
-        model_params = {k: v for k, v in config.items() if k != 'model'}
+        model_params = {k: v for k, v in config.items() if k != "model"}
         model = self.model(**model_params)
 
-        cv_scores = cross_val_score(model, X, y, cv=self.cv,)# scoring=self.scoring)
+        cv_scores = cross_val_score(
+            model,
+            X,
+            y,
+            cv=self.cv,
+        )  # scoring=self.scoring)
         mean_cv_score = np.mean(cv_scores)
 
-        ray.train.report(metrics={'mean_cv_score': mean_cv_score})
-
+        ray.train.report(metrics={"mean_cv_score": mean_cv_score})
 
     def hypertune(self):
         self.auto_init_ray()
-        print(f'------ {self.resources} -----')
-        my_trainable = tune.with_resources(trainable=self.train_model,
-                                           resources= {'cpu': self.resources['num_cpus'],
-                                                       'gpu': self.resources['num_gpus'],
-                                                       })
+        print(f"------ {self.resources} -----")
+        my_trainable = tune.with_resources(
+            trainable=self.train_model,
+            resources={
+                "cpu": self.resources["num_cpus"],
+                "gpu": self.resources["num_gpus"],
+            },
+        )
 
-        my_tune_config = tune.TuneConfig(metric="mean_cv_score",
-                                         mode="max",
-                                         num_samples=self.num_samples)
+        my_tune_config = tune.TuneConfig(
+            metric="mean_cv_score", mode="max", num_samples=self.num_samples
+        )
 
-        analysis = tune.Tuner(trainable=my_trainable,
-                              param_space=self.search_space,
-                              tune_config=my_tune_config,
+        analysis = tune.Tuner(
+            trainable=my_trainable,
+            param_space=self.search_space,
+            tune_config=my_tune_config,
         )
 
         results = analysis.fit()
@@ -306,7 +309,6 @@ def hypertune_classifier(
         >>> best_params = hypertune_classifier(RandomForestClassifier, X, y, 0.2, param_grid, use_ray=True)
         >>> print("Best hyperparameters:", best_params)
     """
-
 
     model = ml_model()
 

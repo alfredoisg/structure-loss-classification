@@ -40,12 +40,14 @@ def load_hyperparameter(classification_mode, filename: str = None):
 def get_stat_metrics(
     parent_dir: str,
     version: int,
+    save_dir: str,
+    file_name: str,
 ) -> pd.DataFrame:
 
     dfs = []
 
     dir_name = parent_dir[parent_dir.index("/") + 1 :]
-    parent_dir = parent_dir + "/cv"
+    # parent_dir = parent_dir + "/cv"
 
     for fold in range(len(os.listdir(parent_dir))):
 
@@ -58,6 +60,7 @@ def get_stat_metrics(
         dfs.append(df)
 
     all_folds = pd.concat(dfs, ignore_index=True)
+
     grouped = (
         all_folds.groupby("epoch")
         .agg({"val_accuracy": ["mean", "std"], "val_loss": ["mean", "std"]})
@@ -72,19 +75,25 @@ def get_stat_metrics(
         "std_val_loss",
     ]
 
-    grouped.to_csv(f"results/{dir_name}.csv")
+    try:
+        grouped.to_csv(f"results/{save_dir}/{file_name}.csv")
+    except OSError:
+        # Create the directory if it doesn't exist
+        os.makedirs(f"results/{save_dir}", exist_ok=True)
+        grouped.to_csv(f"results/{save_dir}/{file_name}.csv")
 
-    return grouped
+        return grouped
 
 
 def get_train_val_data(
     data: CustomDatasetWrapper,
     targets: list,
     test_size: float = 0.2,
-
 ):
     train_idx, val_idx, _, _ = train_test_split(
-        range(len(data)), targets, test_size=test_size, 
+        range(len(data)),
+        targets,
+        test_size=test_size,
     )
 
     train_data = torch.utils.data.Subset(data, train_idx)

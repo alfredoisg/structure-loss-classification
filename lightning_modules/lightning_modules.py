@@ -33,6 +33,10 @@ class LitModelBase(pl.LightningModule):
 
         self.pretrained = pretrained
 
+    def forward(self, x):
+        # This should be overridden in subclasses
+        raise NotImplementedError("Forward method not implemented.")
+
     def _common_step(self, batch, batch_idx, stage=None):
         inputs, labels = batch
 

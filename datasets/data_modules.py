@@ -4,7 +4,9 @@ import pytorch_lightning as pl
 
 
 class CustomImageDataModule(pl.LightningDataModule):
-    def __init__(self, train_dataset, val_dataset, batch_size=64, num_workers=os.cpu_count()):
+    def __init__(
+        self, train_dataset, val_dataset, batch_size=64, num_workers=os.cpu_count()
+    ):
         super().__init__()
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -18,7 +20,7 @@ class CustomImageDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=True,
-            pin_memory=True
+            pin_memory=True,
         )
 
     def val_dataloader(self):
@@ -27,5 +29,5 @@ class CustomImageDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=False,
-            pin_memory=True
+            pin_memory=True,
         )
