@@ -101,10 +101,8 @@ class LitLeNet5(pl.LightningModule):
         return loss, predictions, labels
 
     def training_step(self, batch, batch_idx):
-        loss, predictions, labels = self._common_step(batch, batch_idx)
-        accuracy = self.accuracy(predictions, labels)
-        f1_score = self.f1_score(predictions, labels)
-
+        loss, _, _ = self._common_step(batch, batch_idx)
+        
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -219,9 +217,7 @@ class LitVGG16(pl.LightningModule):
         return loss, predictions, labels
 
     def training_step(self, batch, batch_idx):
-        loss, predictions, labels = self._common_step(batch, batch_idx)
-        accuracy = self.accuracy(predictions, labels)
-        f1_score = self.f1_score(predictions, labels)
+        loss, _, _ = self._common_step(batch, batch_idx)
 
         return loss
 
@@ -299,9 +295,7 @@ class LitResNet18(pl.LightningModule):
         return loss, predictions, labels
 
     def training_step(self, batch, batch_idx):
-        loss, predictions, labels = self._common_step(batch, batch_idx)
-        accuracy = self.accuracy(predictions, labels)
-        f1_score = self.f1_score(predictions, labels)
+        loss, _, _ = self._common_step(batch, batch_idx)
 
         return loss
 

@@ -83,7 +83,7 @@ class HyperParameterTuner:
     def train_func(self, config):
 
         dm = self.datamodule
-        model = self.model_class(**config["model_params"])
+        model = self.model_class(config)
 
         trainer = pl.Trainer(
             devices="auto",

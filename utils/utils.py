@@ -60,8 +60,12 @@ def get_stat_metrics(
         dfs.append(df)
 
     all_folds = pd.concat(dfs, ignore_index=True)
-    
-    grouped = (all_folds.groupby("epoch").agg({"val_accuracy": ["mean", "std"], "val_loss": ["mean", "std"]}).reset_index())
+
+    grouped = (
+        all_folds.groupby("epoch")
+        .agg({"val_accuracy": ["mean", "std"], "val_loss": ["mean", "std"]})
+        .reset_index()
+    )
 
     grouped.columns = [
         "epoch",
@@ -85,10 +89,11 @@ def get_train_val_data(
     data: CustomDatasetWrapper,
     targets: list,
     test_size: float = 0.2,
-
 ):
     train_idx, val_idx, _, _ = train_test_split(
-        range(len(data)), targets, test_size=test_size, 
+        range(len(data)),
+        targets,
+        test_size=test_size,
     )
 
     train_data = torch.utils.data.Subset(data, train_idx)
