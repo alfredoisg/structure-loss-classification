@@ -148,7 +148,7 @@ class HyperParameterTuner:
 
         ray.shutdown()
 
-        return best_config["train_loop_config"]["model_params"]
+        return best_config["train_loop_config"]
 
 
 class SKLearnHyperParameterTuner:
