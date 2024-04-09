@@ -7,14 +7,14 @@ import torchmetrics
 
 from torchvision import models
 
-def conv_layer(in_channels, out_channels, kernel_size):
+def conv_layer(in_channels, out_channels, kernel_size, padding):
             layer = nn.Sequential(
                 nn.Conv2d(
                 in_channels=in_channels,
                 out_channels=out_channels,
                 kernel_size=kernel_size,
                 stride=1,
-                padding=0
+                padding=padding
                 ),
                 nn.BatchNorm2d(
                 num_features=out_channels
@@ -65,11 +65,11 @@ class LitLeNet5(pl.LightningModule):
 
 
         convStack = nn.Sequential(
-            conv_layer(in_channels = 3, out_channels = 6, kernel_size=5), ## 244x244 --> 240x240
+            conv_layer(in_channels = 3, out_channels = 6, kernel_size=5, padding=0), ## 244x244 --> 240x240
             nn.MaxPool2d(2,2), ## 240x240 --> 120x120
-            conv_layer(in_channels = 6, out_channels = 16, kernel_size=5), ## 120x120 --> 117x117
+            conv_layer(in_channels = 6, out_channels = 16, kernel_size=5, padding=0), ## 120x120 --> 117x117
             nn.MaxPool2d(2, 2), ## 122x122 --> 58x58
-            conv_layer(in_channels = 16, out_channels = 120, kernel_size=5) ## 58x58 --> 54x54
+            conv_layer(in_channels = 16, out_channels = 120, kernel_size=5, padding=0) ## 58x58 --> 54x54
         )
 
         fullyConStack = nn.Sequential(
@@ -116,7 +116,8 @@ class LitLeNet5(pl.LightningModule):
                        'val_f1_score': f1_score},
                        on_step=False,
                        on_epoch=True,
-                       prog_bar=True)
+                       prog_bar=True,
+                       sync_dist=True,)
 
         return loss
 
@@ -159,28 +160,28 @@ class LitVGG16(pl.LightningModule):
 
         convStack = nn.Sequential(
             # C64-C64-P2
-            conv_layer(3, 64, kernel_size=3),
-            conv_layer(64, 64, kernel_size=3),
+            conv_layer(3, 64, kernel_size=3, padding=1),
+            conv_layer(64, 64, kernel_size=3, padding=1),
             nn.MaxPool2d(2, 2),  # 244x244 --> 122x122
             # C128-C128-P2
-            conv_layer(64, 128, kernel_size=3),
-            conv_layer(128, 128, kernel_size=3),
+            conv_layer(64, 128, kernel_size=3, padding=1),
+            conv_layer(128, 128, kernel_size=3, padding=1),
             nn.MaxPool2d(2, 2),  # 122x122 --> 61x61
             # C256-C256-C256-P2
-            conv_layer(128, 256, kernel_size=3),
-            conv_layer(256, 256, kernel_size=3),
-            conv_layer(256, 256, kernel_size=3),
-            conv_layer(256, 256, kernel_size=3),
+            conv_layer(128, 256, kernel_size=3, padding=1),
+            conv_layer(256, 256, kernel_size=3, padding=1),
+            conv_layer(256, 256, kernel_size=3, padding=1),
+            conv_layer(256, 256, kernel_size=3, padding=1),
             nn.MaxPool2d(2, 2),  # 61x61 --> 30x30
             # C512-C512-C512-P2
-            conv_layer(256, 512, kernel_size=3),
-            conv_layer(512, 512, kernel_size=3),
-            conv_layer(512, 512, kernel_size=3),
+            conv_layer(256, 512, kernel_size=3, padding=1),
+            conv_layer(512, 512, kernel_size=3, padding=1),
+            conv_layer(512, 512, kernel_size=3, padding=1),
             nn.MaxPool2d(2, 2),  # 30x30 --> 15x15
             # C512-C512-C512-P2
-            conv_layer(512, 512, kernel_size=3),
-            conv_layer(512, 512, kernel_size=3),
-            conv_layer(512, 512, kernel_size=3),
+            conv_layer(512, 512, kernel_size=3, padding=1),
+            conv_layer(512, 512, kernel_size=3, padding=1),
+            conv_layer(512, 512, kernel_size=3, padding=1),
             nn.MaxPool2d(2, 2),  # 15x15 --> 7x7
         )
         
@@ -232,7 +233,8 @@ class LitVGG16(pl.LightningModule):
                        'val_f1_score': f1_score},
                        on_step=False,
                        on_epoch=True,
-                       prog_bar=True)
+                       prog_bar=True,
+                       sync_dist=True,)
 
         return loss
 
@@ -310,7 +312,8 @@ class LitResNet18(pl.LightningModule):
                        'val_f1_score': f1_score},
                        on_step=False,
                        on_epoch=True,
-                       prog_bar=True)
+                       prog_bar=True,
+                       sync_dist=True,)
 
         return loss
 
