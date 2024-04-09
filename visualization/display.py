@@ -73,12 +73,12 @@ def compare(dfs: list, labels: list, save: bool = False, filename: str = None):
 
 
 
-def display_metrics(data: Optional[Union[pd.DataFrame, str]] = None, save: bool = False, filename: Optional[str] = None):
+def display_metrics(path_to_data: Optional[Union[pd.DataFrame, str]] = None, save: bool = False, path_to_file: Optional[str] = None):
     
-    if isinstance(data, str):  # assuming 'data' is a path to a CSV file
-        df = pd.read_csv(data)
-    elif isinstance(data, pd.DataFrame):
-        df = data
+    if isinstance(path_to_data, str):  # assuming 'data' is a path to a CSV file
+        df = pd.read_csv(path_to_data)
+    elif isinstance(path_to_data, pd.DataFrame):
+        df = path_to_data
     else:
         raise ValueError("Invalid input: data must be a DataFrame or a CSV file path")
 
@@ -108,7 +108,7 @@ def display_metrics(data: Optional[Union[pd.DataFrame, str]] = None, save: bool 
     plt.grid(True)
 
     if save:
-        plt.savefig(filename,  bbox_inches='tight')
+        plt.savefig(path_to_file,  bbox_inches='tight')
 
 
 def display_cm(
