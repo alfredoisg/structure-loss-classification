@@ -46,9 +46,6 @@ def get_stat_metrics(
 
     dfs = []
 
-    dir_name = parent_dir[parent_dir.index("/") + 1 :]
-    # parent_dir = parent_dir + "/cv"
-
     for fold in range(len(os.listdir(parent_dir))):
 
         print(f"{parent_dir}/fold_{fold+1}")

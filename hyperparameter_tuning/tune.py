@@ -81,7 +81,8 @@ class HyperParameterTuner:
             ray.init(**resources)
 
     def train_func(self, config):
-
+        torch.set_float32_matmul_precision('high')
+        
         dm = self.datamodule
         model = self.model_class(config)
 
@@ -118,6 +119,7 @@ class HyperParameterTuner:
                 checkpoint_score_order="max",
             ),
             progress_reporter=JupyterNotebookReporter(),
+            verbose=1
         )
 
         ray_trainer = TorchTrainer(
