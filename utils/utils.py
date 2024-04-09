@@ -3,7 +3,7 @@ import json
 
 import os
 from datasets.datasets import CustomDatasetWrapper
-from lightning_modules.lightning_modules import LitModelBase
+from lightning_modules.modular import LitModelBase
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import torch

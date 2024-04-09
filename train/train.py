@@ -12,7 +12,7 @@ from sklearn.model_selection import StratifiedKFold
 
 from datasets.datasets import CustomDatasetWrapper
 from datasets.data_modules import CustomImageDataModule
-from lightning_modules.lightning_modules import LitModelBase
+from lightning_modules.modular import LitModelBase
 
 import os
 

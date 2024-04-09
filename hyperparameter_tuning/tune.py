@@ -26,7 +26,7 @@ from ray.tune.sklearn import TuneGridSearchCV
 from sklearn.model_selection import cross_val_score
 
 from datasets.data_modules import CustomImageDataModule
-from lightning_modules.lightning_modules import LitModelBase
+
 
 
 class HyperParameterTuner:
@@ -52,7 +52,7 @@ class HyperParameterTuner:
 
     def __init__(
         self,
-        model_class: LitModelBase,
+        model_class: pl.LightningModule,
         datamodule: CustomImageDataModule,
         search_space: dict,
         resources: dict = {
