@@ -28,7 +28,6 @@ from sklearn.model_selection import cross_val_score
 from datasets.data_modules import CustomImageDataModule
 
 
-
 class HyperParameterTuner:
     """
     hyperparameter tuning of PyTorch Lightning models using Ray Tune.
@@ -81,8 +80,8 @@ class HyperParameterTuner:
             ray.init(**resources)
 
     def train_func(self, config):
-        torch.set_float32_matmul_precision('high')
-        
+        torch.set_float32_matmul_precision("high")
+
         dm = self.datamodule
         model = self.model_class(config)
 
@@ -119,7 +118,7 @@ class HyperParameterTuner:
                 checkpoint_score_order="max",
             ),
             progress_reporter=JupyterNotebookReporter(),
-            verbose=1
+            verbose=1,
         )
 
         ray_trainer = TorchTrainer(
