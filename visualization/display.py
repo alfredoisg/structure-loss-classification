@@ -41,14 +41,12 @@ def process_plot_image(data, x: int, plot: bool = False):
 
 def compare(dfs: list, labels: list, save: bool = False, filename: str = None):
 
-    fig, ax = plt.subplots(1, 1, figsize=(10,8))
-    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+
     for df, label in zip(dfs, labels):
 
         ax.plot(df.epoch, df.mean_val_loss, label=f"validation loss - {label}")
-        ax.plot(
-            df.epoch, df.mean_val_accuracy, label=f"validation accuracy - {label}"
-        )
+        ax.plot(df.epoch, df.mean_val_accuracy, label=f"validation accuracy - {label}")
 
         ax.fill_between(
             df.epoch,
@@ -63,25 +61,30 @@ def compare(dfs: list, labels: list, save: bool = False, filename: str = None):
             alpha=0.2,
         )
         ax.set_ylim(0, 1.6)
-        ax.set_xlabel('Epoch')
-
-    if save:
-        fig.savefig(filename, )
-
+        ax.set_xlabel("Epoch")
     ax.legend()
-
-
-
-
-def display_metrics(path_to_data: Optional[Union[pd.DataFrame, str]] = None, save: bool = False, path_to_file: Optional[str] = None):
     
+    if save:
+        fig.savefig(
+            filename,
+        )
+
+    
+
+
+def display_metrics(
+    path_to_data: Optional[Union[pd.DataFrame, str]] = None,
+    y_lim: float = None,
+    save: bool = False,
+    path_to_file: Optional[str] = None,
+):
+
     if isinstance(path_to_data, str):  # assuming 'data' is a path to a CSV file
         df = pd.read_csv(path_to_data)
     elif isinstance(path_to_data, pd.DataFrame):
         df = path_to_data
     else:
         raise ValueError("Invalid input: data must be a DataFrame or a CSV file path")
-
 
     plt.plot(df.epoch, df.mean_val_loss, label="validation loss")
     plt.fill_between(
@@ -102,13 +105,14 @@ def display_metrics(path_to_data: Optional[Union[pd.DataFrame, str]] = None, sav
     )
 
     plt.xlabel("Epoch")
+    plt.ylim(0.13, y_lim)
 
     plt.title("Mean Accuracy and Validation loss with Standard Deviation")
     plt.legend()
     plt.grid(True)
 
     if save:
-        plt.savefig(path_to_file,  bbox_inches='tight')
+        plt.savefig(path_to_file, bbox_inches="tight")
 
 
 def display_cm(

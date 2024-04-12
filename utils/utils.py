@@ -40,8 +40,9 @@ def load_hyperparameter(classification_mode, filename: str = None):
 def get_stat_metrics(
     parent_dir: str,
     version: int,
-    save_dir: str,
-    file_name: str,
+    save: bool = False,
+    save_dir: str = None,
+    file_name: str = None,
 ) -> pd.DataFrame:
 
     dfs = []
