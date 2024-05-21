@@ -19,7 +19,7 @@ class CustomDatasetWrapper(Dataset):
     @property
     def classes(self):
         return self.dataset.classes
-
+    
     def _get_label(self, idx):
         actual_idx = self.valid_indices[idx]
         _, label = self.dataset.samples[actual_idx]
@@ -28,6 +28,7 @@ class CustomDatasetWrapper(Dataset):
 
     def get_all_labels(self):
         return [self._get_label(i) for i in range(len(self.valid_indices))]
+
 
     def _create_label_map(self):
         label_map = {}
