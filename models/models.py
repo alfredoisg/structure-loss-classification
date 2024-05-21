@@ -26,12 +26,16 @@ class LeNet5(nn.Module):
                 nn.ReLU(),
             )
             return layer
-
+        
         def fc_layer(in_features, out_features):
-
-            layer = nn.Linear(in_features=in_features, out_features=out_features)
-
-            nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
+            
+            layer = nn.Linear(
+                in_features=in_features,
+                out_features=out_features
+            )
+            
+            nn.init.kaiming_normal_(layer.weight,
+                                    nonlinearity='relu')
             return layer
 
         self.convStack = nn.Sequential(
