@@ -1,0 +1,5 @@
+{
+    "n_neighbors": 20,
+    "weights": "uniform",
+    "algorithm": "auto"
+}

@@ -1,0 +1,11 @@
+{
+    "model_params": {
+        "num_classes": 2,
+        "size_layer_1": 512,
+        "size_layer_2": 128,
+        "size_layer_3": 64
+    },
+    "learning_rate": 0.0004929256780527196,
+    "batch_size": 64,
+    "num_workers": 12
+}
