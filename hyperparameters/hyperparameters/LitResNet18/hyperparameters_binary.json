@@ -1,0 +1,9 @@
+{
+    "model_params": {
+        "num_classes": 2
+    },
+    "pretrained": true,
+    "learning_rate": 0.0005322005876291932,
+    "batch_size": 64,
+    "num_workers": 8
+}
