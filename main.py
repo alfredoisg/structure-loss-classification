@@ -1,4 +1,4 @@
-from lightning_modules.lightning_modules import LitLeNet5
+from lightning_modules.modular import LitLeNet5
 from train.train import get_features
 from utils.utils import load_targets
 
