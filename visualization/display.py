@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import scienceplots
+import matplotlib.colors as mcolors
 
 from typing import Optional, Union
 
@@ -150,3 +151,30 @@ def display_cm(
         print("Confusion Matrix saved")
     else:
         plt.show()
+
+def plot_metrics(dfs: list, model: str, classification_mode: str, y_lim: Optional[float], save: bool=False):
+    
+# Assuming 'dfs' is a list of dataframes and each dataframe has 'epoch' and 'val_accuracy' columns
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 6))
+    for c, df in enumerate(dfs):
+        # Plot the main line with markers
+        ax2.plot(df.epoch, df.val_accuracy, '-o',
+                            color=list(mcolors.TABLEAU_COLORS.values())[c],
+                            label=f'round {str(c+1)}')
+        
+        ax1.plot(df.epoch, df.val_loss, '-o',
+                            color=list(mcolors.TABLEAU_COLORS.values())[c],
+                        )
+
+
+    ax2.legend(loc=(1.005, 0.15))
+    ax1.set_title('validation loss')
+    ax2.set_title('validation accuracy')
+    ax1.set_xlabel('Epoch')
+    ax2.set_xlabel('Epoch')
+    
+    ax1.set_ylim(0, y_lim)
+    
+    if save:
+        plt.savefig(f'results/pipeline_3/{model}-{classification_mode}.pdf', bbox_inches='tight')
+    plt.show()
