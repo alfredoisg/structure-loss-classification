@@ -50,8 +50,6 @@ The maintained workflows are the notebooks:
 - `pipelines/pipeline_3.ipynb`
 - `results.ipynb`
 
-`main.py` should not be treated as the primary executable entry point.
-
 # Data Format
 
 The dataset is expected to be arranged as an `ImageFolder` root, with one subdirectory per class.
@@ -90,4 +88,3 @@ Result summaries are written under `results/` by the utility functions and noteb
 - `LeNet5` and `VGG16` currently assume `244x244` RGB inputs because their flattened dimensions are hardcoded.
 - Some paths inside notebooks are environment-specific examples and may need to be adapted locally.
 - There is currently no formal test or CI setup in the repository.
-
