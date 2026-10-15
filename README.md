@@ -1,4 +1,4 @@
-# structure-loss-classification
+# Structure Loss Classification in Czochralski Silicon Ingots
 
 Utilities, models, and notebook pipelines for offline classification of structure loss in Czochralski silicon ingots.
 
