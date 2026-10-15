@@ -175,3 +175,6 @@ AGENTS.md
 .python-version
 .idea/
 .vscode/
+
+# Private/local research inputs
+data/

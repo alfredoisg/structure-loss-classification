@@ -4,6 +4,36 @@ Utilities, models, and notebook pipelines for offline classification of structur
 
 This repository contains the code used to support the experiments and analysis around deep-learning and hybrid-learning approaches for ingot image classification. In practice, the main workflows live in the notebooks under `pipelines/` and in `results.ipynb`.
 
+## Quick start: synthetic demonstration
+
+From the repository root (Python 3.10 or newer):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+python examples/synthetic_analysis.py
+python -m unittest discover -s tests
+```
+
+Read `results/synthetic/metrics.json` and `results/synthetic/confusion.csv`.
+This CPU example uses artificial RGB images and a nearest-centroid classifier;
+it does not train the historical CNNs or reproduce the paper's results.
+
+For the ordered interactive walkthrough:
+
+```bash
+python -m pip install -e ".[notebook]"
+python -m jupyter lab demo.ipynb
+```
+
+Existing importable packages stay in place so historical notebook imports work.
+`datasets/synthetic.py` shares the demo computation between the script and notebook;
+`tests/` checks deterministic images, disjoint balanced splits, centroid predictions,
+and metric accounting. `pyproject.toml` owns dependency metadata. See
+[the data contract](docs/data.md), [reproducibility](docs/reproducibility.md),
+and [release status](docs/public-release.md).
+
 # Paper
 
 [Machine Learning Methods for Structure Loss Classification in Czochralski Silicon Ingots](https://pubs.acs.org/doi/10.1021/acs.cgd.4c00760)
@@ -45,7 +75,7 @@ If you need the optional GPU sklearn path used in `hyperparameter_tuning/tune.py
 python -m pip install -r rapids-requirements.txt
 ```
 
-Optional editable install (dependencies must be installed separately):
+Minimal editable install (synthetic demonstration dependencies only):
 
 ```bash
 python -m pip install -e .
@@ -147,8 +177,8 @@ Result summaries are written under `results/` by the utility functions and noteb
   Review transforms and split seeds before using metrics for new comparisons.
 - `train_model(test=False)` enables checkpointing and early stopping;
   the default `test=True` still trains but disables these callbacks.
-- Lightweight CI checks syntax, JSON, notebook hygiene, and tracked artifacts.
-  It does not execute training or validate scientific results.
+- CI installs the lightweight package, runs behavioral tests, executes the synthetic
+  script and demo notebook, and checks source hygiene. Historical training is not covered.
 
 # Contributing and release review
 

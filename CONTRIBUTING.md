@@ -13,6 +13,9 @@ so that their effect on comparisons can be reviewed.
 Run the lightweight source checks before submitting:
 
 ```bash
+python -m pip install -e .
+python -m unittest discover -s tests
+python examples/synthetic_analysis.py
 python scripts/check_release.py
 ```
 

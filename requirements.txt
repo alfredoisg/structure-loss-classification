@@ -1,13 +1,2 @@
-matplotlib
-numpy
-pandas
-pytorch_lightning
-ray[default,tune]==2.8.1
-tune-sklearn
-scienceplots
-scikit_learn
-scipy
-torch
-torchmetrics
-torchvision
-black
+# Historical training and notebook environment; metadata is in pyproject.toml.
+-e .[research,notebook,dev]

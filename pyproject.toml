@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "structure-loss-classification"
+version = "1.0"
+description = "Research workflows for structure loss classification in silicon ingots"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = ["numpy>=1.23"]
+
+[project.optional-dependencies]
+research = [
+  "matplotlib", "pandas", "pytorch_lightning", "ray[default,tune]==2.8.1",
+  "tune-sklearn", "scienceplots", "scikit-learn", "scipy", "torch",
+  "torchmetrics", "torchvision", "Pillow",
+]
+notebook = ["jupyterlab", "nbclient", "ipykernel"]
+dev = ["black"]
+
+[project.urls]
+Repository = "https://github.com/alfredoisg/structure-loss-classification"
+
+[tool.setuptools.packages.find]
+include = ["datasets*", "models*", "lightning_modules*", "train*", "utils*", "visualization*", "hyperparameter_tuning*"]
