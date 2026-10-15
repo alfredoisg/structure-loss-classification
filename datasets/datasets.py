@@ -36,7 +36,7 @@ class CustomDatasetWrapper(Dataset):
 
         if self.classification_mode == "binary":
             # Assuming 'goodIngots' is index 0, and others are 'bad'
-            label_map = {0: 0, 1: 1, 2: 1, 3: 1}
+            label_map = {i: int(i != 0) for i in range(len(self.dataset.classes))}
             valid_indices = list(range(len(self.dataset)))
 
         elif self.classification_mode == "all":

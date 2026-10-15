@@ -21,6 +21,7 @@ def load_targets(data: CustomDatasetWrapper, from_dir: str = None):
     except FileNotFoundError:
         targets = [t for _, t in data]
         # Cache the targets for next time
+        os.makedirs(os.path.dirname(os.path.abspath(from_dir)), exist_ok=True)
         with open(from_dir, "wb") as f:
             pickle.dump(targets, f)
 
@@ -72,7 +73,9 @@ def get_stat_metrics(
         "std_val_loss",
     ]
 
-    grouped.to_csv(f"results/{dir_name}.csv")
+    output_path = f"results/{dir_name}.csv"
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    grouped.to_csv(output_path)
 
     return grouped
 

@@ -80,7 +80,7 @@ def train_model(
         log_every_n_steps=trainer_config["n_steps"],
         callbacks=callbacks,
         logger=csv_logger,
-        enable_checkpointing=False,
+        enable_checkpointing=not test,
     )
 
     trainer.fit(model=model, datamodule=data_module)
@@ -275,6 +275,7 @@ def get_features(
                     )
                 labels.extend(label.cpu().numpy())
 
+        os.makedirs(os.path.dirname(os.path.abspath(path_to_file)), exist_ok=True)
         torch.save((features, labels), path_to_file)
         print("Features and labels extracted and saved to cache.")
 
